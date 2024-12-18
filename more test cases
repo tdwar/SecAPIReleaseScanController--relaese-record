@@ -158,3 +158,66 @@ public class SecAPIReleaseScanController_Test {
         Test.stopTest();
     }
 }
+
+
+ @isTest
+    static void testGetFinalSCASecurityScoreCard() {
+        // Test the `getFinalSCASecurityScoreCard` method
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        // Mock a valid response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', '{"scoreCard": "A", "failScan": false}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        String finalScoreCard = SecAPIReleaseScanController.getFinalSCASecurityScoreCard('score/test', releaseRec.Id);
+        System.assertNotEquals(null, finalScoreCard, 'Final ScoreCard should not be null');
+        System.assertEquals('A', finalScoreCard, 'Expected scoreCard value to be "A"');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetFinalSCASecurityScoreCardError() {
+        // Test the `getFinalSCASecurityScoreCard` method with an error response
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        // Mock an error response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(400, 'Error', '{}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        String finalScoreCard = SecAPIReleaseScanController.getFinalSCASecurityScoreCard('score/test', releaseRec.Id);
+        System.assertEquals('Error: Could not fetch scoreCard', finalScoreCard, 'Expected error message for scoreCard fetch failure');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetSCAValue() {
+        // Test the `getSCAValue` method
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        // Mock a valid response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', '{"value": 5}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        Decimal scaValue = SecAPIReleaseScanController.getSCAValue('value/test', releaseRec.Id);
+        System.assertNotEquals(null, scaValue, 'SCA Value should not be null');
+        System.assertEquals(5, scaValue, 'Expected SCA value to be 5');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetSCAValueError() {
+        // Test the `getSCAValue` method with an error response
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        // Mock an error response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(400, 'Error', '{}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        Decimal scaValue = SecAPIReleaseScanController.getSCAValue('value/test', releaseRec.Id);
+        System.assertEquals(Decimal.valueOf(0), scaValue, 'Expected SCA value to be 0 on error');
+        Test.stopTest();
+    }
