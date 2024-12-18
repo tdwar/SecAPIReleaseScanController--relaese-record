@@ -1,0 +1,160 @@
+@isTest
+public class SecAPIReleaseScanController_Test {
+    @testSetup
+    static void setUpMethod() {
+        Copado_Integration_Setting__c cis1 = new Copado_Integration_Setting__c(name = 'JIRA', external_system__c = 'JIRA', Named_Credential__c = 'Test_JIRA');
+        insert cis1;
+
+        copado__Project__c pro1 = new copado__Project__c(
+            name = 'MY JIRA Project',
+            Project_External_Id__c = 'MTP',
+            Copado_Integration_Setting__c = cis1.id,
+            enable_logs__c = true,
+            Workspace_Id__c = 'a404576b-7158-4661-9e93-19be9d8e3025',
+            App_Id__c = 'Test',
+            SNOW_APPSVCID__c = 'APPSVC0123456'
+        );
+        insert pro1;
+
+        copado__Release__c releaseRec = new copado__Release__c(Name = 'Test Release', copado__Version__c = '2.0');
+        insert releaseRec;
+
+        Release_Certification_Log__c releaseLog = new Release_Certification_Log__c(Release__c = releaseRec.Id, SNOW_APPSVCID__c = 'APPSVC0123456', Status__c = 'Active');
+        Insert releaseLog;
+
+        copado__User_Story__c userStory = new copado__User_Story__c(
+            No_Priority_1_Violation__c = true,
+            copado__Pull_Requests_Approved__c = true,
+            copado__Project__c = pro1.id,
+            copado__Release__c = releaseRec.Id,
+            Release_Certification_Log__c = releaseLog.Id
+        );
+        insert userStory;
+
+        Sec_Api_Scan_Result__c secRes = new Sec_Api_Scan_Result__c(
+            Release_Copado__c = releaseRec.Id,
+            RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId()
+        );
+        insert secRes;
+
+        Glapi_Callout_Settings__c glapiSetting1 = new Glapi_Callout_Settings__c(Name = 'SecAPIInitiatingSource', Value__c = 'TestSource');
+        insert glapiSetting1;
+
+        Glapi_Callout_Settings__c glapiSetting2 = new Glapi_Callout_Settings__c(Name = 'SecAPIMandatoryCol', Value__c = 'TestCol');
+        insert glapiSetting2;
+
+        Glapi_Callout_Settings__c glapiSetting3 = new Glapi_Callout_Settings__c(Name = 'TechGUID', Value__c = 'TestGUID');
+        insert glapiSetting3;
+    }
+
+    @isTest
+    static void testResetSecAPIScan() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecAPIReleaseScanController.resetSecAPIScan(releaseRec.Id);
+        System.assertEquals('Not Started', [SELECT SEC_API_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id].SEC_API_Scan_Status__c);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testResetSecAPIScanNoAccess() {
+        Test.startTest();
+        try {
+            SecAPIReleaseScanController.resetSecAPIScan(null);
+            System.assert(false, 'Exception should have been thrown for null releaseId');
+        } catch (Exception e) {
+            System.assert(e.getMessage().contains('appropriate access'), 'Expected access-related error');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetBuildId() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        String buildId = SecAPIReleaseScanController.getBuildId(releaseRec.Id);
+        System.assertNotEquals(null, buildId, 'Build ID should not be null');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testSCAScan() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(202, 'Complete', '{"statusUrl": "sca/status/test"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        SecAPIReleaseScanController.SCAScan(releaseRec.Id);
+
+        System.assertEquals('In-Progress', [SELECT SCA_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id].SCA_Scan_Status__c);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testSCAScanError() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(400, 'Failed', '{}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        SecAPIReleaseScanController.SCAScan(releaseRec.Id);
+
+        System.assertEquals('Completed', [SELECT SCA_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id].SCA_Scan_Status__c);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testFetchSCAScanStatus() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+        Sec_Api_Scan_Result__c secRes = [SELECT SCA_Status_URL__c FROM Sec_Api_Scan_Result__c LIMIT 1];
+
+        Test.startTest();
+        String statusUrl = SecAPIReleaseScanController.fetchSCAScanStatus(releaseRec.Id);
+        System.assertEquals(secRes.SCA_Status_URL__c, statusUrl);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testRunSCAStatusCheck() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', '{"status": "FINISHED", "jsonReport": "https://test.com", "pdfReport": "https://test.com"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        SecAPIReleaseScanController.runSCAStatusCheck('sca/status/test', releaseRec.Id);
+
+        System.assertEquals('FINISHED', [SELECT SCA_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id].SCA_Scan_Status__c);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testRunSCAStatusCheckError() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(500, 'Error', '{}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        SecAPIReleaseScanController.runSCAStatusCheck('sca/status/test', releaseRec.Id);
+
+        System.assertEquals('Completed', [SELECT SCA_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id].SCA_Scan_Status__c);
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckPartial() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Partial', '{"status": "PARTIAL", "jsonReport": "https://test.com"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        SecAPIReleaseScanController.runSecAPIStatusCheck('status/test', releaseRec.Id);
+        Test.stopTest();
+    }
+}
