@@ -1,1 +1,104 @@
 Scan Results SAST 13 0 13 0 0 apex FLS_Create Description: The application attempts to access an object in @DestinationElement in @DestinationFile at line @DestinationLine without checking if a user is authorized to do so. This object is then inserted into the database, using the data provided at @SourceElement in @SourceFile at line @SourceLine. Query Path: Apex/Apex_Force_com_Serious_Security_Risk/FLS_Create Total Flows: 3 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: branchname Source file: /classes/SecAPIReleaseScanController.cls Source method: getbuildid Source line: 91 Destination element: lstscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: getbuildid Destination line: 93 Compliances: OWASP ASVS, OWASP Top 10 2021, SANS top 25, ASA Premium, MOIS(KISA) Secure Coding 2021, PCI DSS v3.2.1, PCI DSS v4.0, Top Tier, CWE top 25 CWE: CWE-285 14/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: getrecordtypeid Source file: /classes/SecAPIReleaseScanController.cls Source method: getbuildid Source line: 91 Destination element: lstscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: getbuildid Destination line: 93 Compliances: OWASP ASVS, OWASP Top 10 2021, SANS top 25, ASA Premium, MOIS(KISA) Secure Coding 2021, PCI DSS v3.2.1, PCI DSS v4.0, Top Tier, CWE top 25 CWE: CWE-285 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: releaseid Source file: /classes/SecAPIReleaseScanController.cls Source method: getbuildid Source line: 91 Destination element: lstscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: getbuildid Destination line: 93 Compliances: OWASP ASVS, OWASP Top 10 2021, SANS top 25, ASA Premium, MOIS(KISA) Secure Coding 2021, PCI DSS v3.2.1, PCI DSS v4.0, Top Tier, CWE top 25 CWE: CWE-285 15/21 FLS_Update Description: The application attempts to access an object in @DestinationElement in @DestinationFile at line @DestinationLine without checking if a user is authorized to do so. The object is updated with the data provided at @SourceElement in @SourceFile at line @SourceLine. Query Path: Apex/Apex_Force_com_Serious_Security_Risk/FLS_Update Total Flows: 10 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: id Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 317 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 16/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: status_url__c Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 318 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: id Source file: /classes/SecAPIReleaseScanController.cls Source method: scascan Source line: 471 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: scascan Destination line: 491 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 17/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: release_copado__c Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 319 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: sca_status_url__c Source file: /classes/SecAPIReleaseScanController.cls Source method: scascan Source line: 472 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: scascan Destination line: 491 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 18/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: recordtypeid Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 321 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: sca_error_message__c Source file: /classes/SecAPIReleaseScanController.cls Source method: scascan Source line: 482 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: scascan Destination line: 491 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 19/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: sca_scan_id__c Source file: /classes/SecAPIReleaseScanController.cls Source method: scascan Source line: 475 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: scascan Destination line: 491 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: error_message__c Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 330 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285 20/21 NEW State: To Verify Status: NEW Group name: Apex_Force_com_Serious_Security_Risk First scan id: 46e8c2e9-cd56-4597-a5d3-f40a190bfd33 Found date: 2024-12-19 13:28:09 +0000 UTC First found date: 2024-12-19 13:28:08 +0000 UTC Source element: secapi_scan_id__c Source file: /classes/SecAPIReleaseScanController.cls Source method: secapiscan Source line: 322 Destination element: lstsecscanresults Destination file: /classes/SecAPIReleaseScanController.cls Destination method: secapiscan Destination line: 340 Compliances: OWASP Top 10 2021, MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, Top Tier, PCI DSS v3.2.1, SANS top 25, ASA Premium, CWE top 25, OWASP ASVS CWE: CWE-285
+
+
+public with sharing class SecAPIReleaseScanController {
+    @AuraEnabled
+    public static String getBuildId(String releaseId){
+        // Field-Level Security Checks for SEC_API_Scan_Result__c
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Build_Id__c.isAccessible()) {
+            throw new AuraHandledException('User does not have access to Build_Id__c field.');
+        }
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Repo_Branch__c.isCreateable()) {
+            throw new AuraHandledException('User does not have access to create Repo_Branch__c field.');
+        }
+
+        List<SEC_API_Scan_Result__c> lstScanResults = new List<SEC_API_Scan_Result__c>();
+        List<copado__Release__c> toUpdateRelease = new List<copado__Release__c>();
+        String buildId = '';
+        String BranchName = '';
+
+        try {
+            if (String.isNotEmpty(releaseId)) {
+                BranchName = [SELECT Id, copado__branch__c, copado__Source_Environment__c 
+                              FROM copado__Deployment_Flow_Step__c 
+                              WHERE copado__Source_Environment__c IN :new Set<Id>() LIMIT 1].copado__branch__c;
+            }
+            lstScanResults.add(new SEC_API_Scan_Result__c(Release_Copado__c = releaseId,
+                                                          RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId(),
+                                                          Repo_Branch__c = BranchName));
+            if (!lstScanResults.isEmpty() && Schema.sObjectType.SEC_API_Scan_Result__c.isCreateable()) {
+                Insert lstScanResults;
+            }
+            if (Schema.sObjectType.SEC_API_Scan_Result__c.fields.Build_Id__c.isAccessible()) {
+                buildId = [SELECT Id, Build_Id__c 
+                           FROM SEC_API_Scan_Result__c 
+                           WHERE Build_Id__c != null AND Release_Copado__c = :releaseId 
+                           ORDER BY CreatedDate DESC LIMIT 1].Build_Id__c;
+            }
+            if (Schema.sObjectType.copado__Release__c.isUpdateable() && String.isNotEmpty(buildId)) {
+                toUpdateRelease.add(new copado__Release__c(Id = releaseId, Artifact_Id__c = buildId));
+                Update toUpdateRelease;
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException('Error fetching Build ID: ' + e.getMessage());
+        }
+        return buildId;
+    }
+
+    @AuraEnabled
+    public static String secAPIScan(String releaseId) {
+        // Field-Level Security Checks for Fields Updated in secAPIScan
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Status_URL__c.isUpdateable()) {
+            throw new AuraHandledException('User does not have access to update Status_URL__c field.');
+        }
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isUpdateable()) {
+            throw new AuraHandledException('User does not have access to update Release_Copado__c field.');
+        }
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isAccessible()) {
+            throw new AuraHandledException('User does not have access to RecordTypeId field.');
+        }
+
+        String resp = '';
+        try {
+            List<SEC_API_Scan_Result__c> lstSecScanResults = new List<SEC_API_Scan_Result__c>();
+            List<copado__Release__c> toUpdateRelease = new List<copado__Release__c>();
+
+            lstSecScanResults.add(new SEC_API_Scan_Result__c(Release_Copado__c = releaseId, 
+                                                              Status_URL__c = 'statusUrl',
+                                                              RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId()));
+            if (!lstSecScanResults.isEmpty() && Schema.sObjectType.SEC_API_Scan_Result__c.isUpdateable()) {
+                Update lstSecScanResults;
+            }
+            toUpdateRelease.add(new copado__Release__c(Id = releaseId, SEC_API_Scan_Status__c = 'In-Progress'));
+            if (!toUpdateRelease.isEmpty() && Schema.sObjectType.copado__Release__c.isUpdateable()) {
+                Update toUpdateRelease;
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException('Error in SEC API scan: ' + e.getMessage());
+        }
+        return resp;
+    }
+
+    @AuraEnabled
+    public static String SCAScan(String releaseId) {
+        // Field-Level Security Checks for Fields Updated in SCAScan
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Status_URL__c.isUpdateable()) {
+            throw new AuraHandledException('User does not have access to update SCA_Status_URL__c field.');
+        }
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isUpdateable()) {
+            throw new AuraHandledException('User does not have access to update Release_Copado__c field.');
+        }
+
+        String resp = '';
+        try {
+            List<SEC_API_Scan_Result__c> lstSecScanResults = new List<SEC_API_Scan_Result__c>();
+            lstSecScanResults.add(new SEC_API_Scan_Result__c(Release_Copado__c = releaseId, SCA_Status_URL__c = 'scaStatusUrl'));
+            if (!lstSecScanResults.isEmpty() && Schema.sObjectType.SEC_API_Scan_Result__c.isUpdateable()) {
+                Update lstSecScanResults;
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException('Error in SCA scan: ' + e.getMessage());
+        }
+        return resp;
+    }
+}
