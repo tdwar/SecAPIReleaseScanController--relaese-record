@@ -102,3 +102,53 @@ public with sharing class SecAPIReleaseScanController {
         return resp;
     }
 }
+
+
+@AuraEnabled
+public static String secAPIScan(String releaseId) {
+    // Add FLS Checks for all fields
+    if (!Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.status_URL__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Scan_Status__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isAccessible()) {
+        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+    }
+
+    if (!Schema.sObjectType.copado__Release__c.isAccessible() || 
+        !Schema.sObjectType.copado__Release__c.fields.SEC_API_Scan_Status__c.isAccessible()) {
+        throw new AuraHandledException('User does not have appropriate access to copado__Release__c fields.');
+    }
+
+    // Original code
+    String statusURL = '';
+    String appReqId = '';
+    String resp = '';
+    // Remaining logic...
+}
+
+@AuraEnabled
+public static String SCAScan(String releaseId) {
+    // Add FLS Checks for all fields
+    if (!Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Status_URL__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_scan_Status__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Scan_Id__c.isAccessible() ||
+        !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Error_Message__c.isAccessible()) {
+        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+    }
+
+    if (!Schema.sObjectType.copado__Release__c.isAccessible() || 
+        !Schema.sObjectType.copado__Release__c.fields.SCA_Scan_Status__c.isAccessible()) {
+        throw new AuraHandledException('User does not have appropriate access to copado__Release__c fields.');
+    }
+
+    // Original code
+    system.debug('Enters scan');
+    String statusURLSCA = '';
+    String appReqIdSCA = '';
+    String resp = '';
+    // Remaining logic...
+}
+
