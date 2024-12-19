@@ -237,3 +237,57 @@ Destination line: 359
 Compliances: MOIS(KISA) Secure Coding 2021, PCI DSS v3.2.1, PCI DSS v4.0, ASA Premium, CWE top 25,
 OWASP ASVS, SANS top 25, OWASP Top 10 2021, Top Tier
 CWE: CWE-285
+---------------------------------------------------------
+
+method--getbuildid, got medium at these source element--getrecordtypeid, released and destination elemt was--lstscanresults. this was the particular line from code
+lstScanResults.add(new SEC_API_Scan_Result__c(Release_Copado__c = releaseId,RecordTypeId=Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId(),Repo_Branch__c=BranchName));
+            if(!lstScanResults.isEmpty() && Schema.sObjectType.SEC_API_Scan_Result__c.isCreateable()){
+                Insert lstScanResults;
+            }
+
+method--scascan,  got medium at these source element--sca_scan_id__c,sca_error_message__c, sca_status_url__c,id, and destination elementt was--lstsecscanresults
+this was the particular line from code
+
+system.debug('@@@ appReqIdforSCA'+appReqIdSCA);
+                sr.Id = recordId;
+                sr.SCA_Status_URL__c = appReqIdSCA;
+                sr.SCA_scan_Status__c = 'Callout 1 Completed';
+                //sr.SecAPI_Scan_Id__c = appReqIdSCA.split('/')[1];
+                sr.SCA_Scan_Id__c = appReqIdSCA.split('/')[1];
+                //sr.SCA_Scan_Id__c = appReqIdSCA.split('/')[1];
+                resp = appReqIdSCA;
+            }
+            else{
+                sr.Id = recordId;
+                sr.SCA_scan_Status__c = 'Callout 1 Failed';
+                sr.SCA_Error_Message__c = 'Status Code '+SCAres.getStatusCode() +', Error Message '+SCAres.getBody();
+                toUpdateRelease.add(new copado__Release__c(Id=releaseId,SCA_Scan_Status__c='Completed',SecApiScanProjectCounter__c = scanCounter));  
+                resp = 'Error occured during 1st Callout. Response Status Code : ' +SCAres.getStatusCode()+ ', Response Status : ' + SCAres.getStatus()+', Response Message : ' + SCAres.getBody();
+            }
+
+
+method--secAPIScan,  got medium at these source element-recordtypeid, secapi_scan_id__c, status_url__c, id, release_copado__c, error_message__c and destination elementt was--lstsecscanresults
+this was the particular line from code
+
+system.debug('@@@ appReqId'+appReqId);
+                sr.Id = recordId;
+                sr.status_URL__c = appReqId;
+                sr.Release_Copado__c = releaseId;
+                sr.Scan_Status__c = 'Callout 1 Completed';
+                sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+                sr.SecAPI_Scan_Id__c = appReqId.split('/')[1];
+                resp = appReqId;
+            }
+            else{
+                sr.Id = recordId;
+                sr.Release_Copado__c = releaseId;
+                sr.Scan_Status__c = 'Callout 1 Failed';
+                sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+                sr.Error_Message__c = 'Status Code '+res.getStatusCode() +', Error Message '+res.getBody();
+                //change made by kamal in updating SEC_API_Scan_Status__c='completed ' to in progress
+                toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',Current_Glapi_Status__c = 'Security Scan Failed', SecApiScanProjectCounter__c = scanCounter));  //Needs to verify1
+                resp = 'Error occured during 1st Callout. Response Status Code : ' +res.getStatusCode()+ ', Response Status : ' + res.getStatus()+', Response Message : ' + res.getBody();
+            }
+
+
+
