@@ -289,5 +289,106 @@ system.debug('@@@ appReqId'+appReqId);
                 resp = 'Error occured during 1st Callout. Response Status Code : ' +res.getStatusCode()+ ', Response Status : ' + res.getStatus()+', Response Message : ' + res.getBody();
             }
 
+---------------------------------
+lstScanResults.add(new SEC_API_Scan_Result__c(
+    Release_Copado__c = releaseId,
+    RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId(),
+    Repo_Branch__c = BranchName
+));
+
+// Validate field and object permissions before inserting
+if (!Schema.sObjectType.SEC_API_Scan_Result__c.isCreateable() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isCreateable() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isCreateable() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Repo_Branch__c.isCreateable()) {
+    throw new AuraHandledException('User does not have appropriate access to create SEC_API_Scan_Result__c fields.');
+}
+
+if (!lstScanResults.isEmpty()) {
+    insert lstScanResults;
+}
+-------------------------
+system.debug('@@@ appReqIdforSCA' + appReqIdSCA);
+if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Id.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Status_URL__c.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_scan_Status__c.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Scan_Id__c.isAccessible()) {
+    throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+}
+
+sr.Id = recordId;
+sr.SCA_Status_URL__c = appReqIdSCA;
+sr.SCA_scan_Status__c = 'Callout 1 Completed';
+sr.SCA_Scan_Id__c = appReqIdSCA.split('/')[1];
+resp = appReqIdSCA;
+
+if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.SCA_Error_Message__c.isAccessible()) {
+    throw new AuraHandledException('User does not have appropriate access to SCA_Error_Message__c field.');
+}
+
+else {
+    sr.Id = recordId;
+    sr.SCA_scan_Status__c = 'Callout 1 Failed';
+    sr.SCA_Error_Message__c = 'Status Code ' + SCAres.getStatusCode() + ', Error Message ' + SCAres.getBody();
+
+    if (!Schema.sObjectType.copado__Release__c.fields.SCA_Scan_Status__c.isUpdateable() ||
+        !Schema.sObjectType.copado__Release__c.fields.SecApiScanProjectCounter__c.isUpdateable()) {
+        throw new AuraHandledException('User does not have appropriate access to update copado__Release__c fields.');
+    }
+
+    toUpdateRelease.add(new copado__Release__c(
+        Id = releaseId,
+        SCA_Scan_Status__c = 'Completed',
+        SecApiScanProjectCounter__c = scanCounter
+    ));
+    resp = 'Error occurred during 1st Callout. Response Status Code : ' + SCAres.getStatusCode() +
+           ', Response Status : ' + SCAres.getStatus() + ', Response Message : ' + SCAres.getBody();
+}
+--------------------------------
+
+system.debug('@@@ appReqId' + appReqId);
+
+if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Id.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.status_URL__c.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Scan_Status__c.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isAccessible() ||
+    !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SecAPI_Scan_Id__c.isAccessible()) {
+    throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+}
+
+sr.Id = recordId;
+sr.status_URL__c = appReqId;
+sr.Release_Copado__c = releaseId;
+sr.Scan_Status__c = 'Callout 1 Completed';
+sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+sr.SecAPI_Scan_Id__c = appReqId.split('/')[1];
+resp = appReqId;
+
+if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Error_Message__c.isAccessible()) {
+    throw new AuraHandledException('User does not have appropriate access to Error_Message__c field.');
+}
+
+else {
+    sr.Id = recordId;
+    sr.Release_Copado__c = releaseId;
+    sr.Scan_Status__c = 'Callout 1 Failed';
+    sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+    sr.Error_Message__c = 'Status Code ' + res.getStatusCode() + ', Error Message ' + res.getBody();
+
+    if (!Schema.sObjectType.copado__Release__c.fields.SEC_API_Scan_Status__c.isUpdateable() ||
+        !Schema.sObjectType.copado__Release__c.fields.SecApiScanProjectCounter__c.isUpdateable()) {
+        throw new AuraHandledException('User does not have appropriate access to update copado__Release__c fields.');
+    }
+
+    toUpdateRelease.add(new copado__Release__c(
+        Id = releaseId,
+        SEC_API_Scan_Status__c = 'In-Progress',
+        Current_Glapi_Status__c = 'Security Scan Failed',
+        SecApiScanProjectCounter__c = scanCounter
+    ));
+    resp = 'Error occurred during 1st Callout. Response Status Code : ' + res.getStatusCode() +
+           ', Response Status : ' + res.getStatus() + ', Response Message : ' + res.getBody();
+}
 
 
