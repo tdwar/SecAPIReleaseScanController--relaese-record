@@ -1,0 +1,44 @@
+@AuraEnabled
+public static String getSCAvalue(String releaseId) {
+    system.debug('Test-0001'); // B2B
+
+    // Check access to copado__Release__c object and its fields
+    if (!Schema.sObjectType.copado__Release__c.isAccessible() || 
+        !Schema.sObjectType.copado__Release__c.fields.Humana_Org__c.isAccessible()) {
+        throw new AuraHandledException('User does not have access to required fields or object.');
+    }
+
+    // Query copado__Release__c
+    copado__Release__c releaseRecord = [
+        SELECT Humana_Org__c 
+        FROM copado__Release__c 
+        WHERE Id = :releaseId 
+        WITH SECURITY_ENFORCED 
+        LIMIT 1
+    ];
+
+    // Validate the field value before using it
+    if (String.isBlank(releaseRecord.Humana_Org__c)) {
+        throw new AuraHandledException('Humana_Org__c is blank for the given release.');
+    }
+
+    // Check access to SCA_Identifier_for_ORG__mdt object and fields
+    if (!Schema.sObjectType.SCA_Identifier_for_ORG__mdt.isAccessible() || 
+        !Schema.sObjectType.SCA_Identifier_for_ORG__mdt.fields.OrgName__c.isAccessible() || 
+        !Schema.sObjectType.SCA_Identifier_for_ORG__mdt.fields.SCA_required__c.isAccessible()) {
+        throw new AuraHandledException('User does not have access to required metadata fields or object.');
+    }
+
+    // Query SCA_Identifier_for_ORG__mdt
+    SCA_Identifier_for_ORG__mdt SCAdataRecords = [
+        SELECT OrgName__c, SCA_required__c 
+        FROM SCA_Identifier_for_ORG__mdt 
+        WHERE SCA_required__c = 'TRUE' 
+        AND OrgName__c = :releaseRecord.Humana_Org__c
+    ];
+
+    system.debug('ORG name: ' + SCAdataRecords.OrgName__c); // B2B
+    system.debug('SCA required value for ORG: ' + SCAdataRecords.SCA_required__c); // TRUE
+
+    return String.valueOf(SCAdataRecords.SCA_required__c);
+}
