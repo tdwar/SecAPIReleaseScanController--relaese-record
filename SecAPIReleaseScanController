@@ -377,7 +377,7 @@ public with sharing class SecAPIReleaseScanController {
                lstUserStory = [SELECT Id,Copado__Project__c, Copado__Project__r.SNOW_APPSVCID__c FROM Copado__User_Story__c Where copado__Release__c =: releaseId AND Copado__Project__r.App_Id__c != null];
             }
             if(String.isNotEmpty(releaseId) && Schema.sObjectType.copado__Release__c.isAccessible()){
-                lstRelease = [select Id,Name,Artifact_Id__c,SecApiScanProjectCounter__c from copado__Release__c where Id =:releaseId limit 1];
+                lstRelease = [select Id,Name,Artifact_Id__c,SecApiScanProjectCounter__c,Unique_Appservice_Id__c from copado__Release__c where Id =:releaseId limit 1];
             }
             system.debug('error before scan counter....niharika2');
             system.debug('Checking Release ID' + releaseId );
@@ -385,6 +385,10 @@ public with sharing class SecAPIReleaseScanController {
              for(copado__User_Story__c us : lstUserStory){
                 listOfProjectIDs.add(us.Copado__Project__r.SNOW_APPSVCID__c);
             }
+            String strappid = lstRelease.Unique_Appservice_Id__c;
+            List<String> lstappId = strappid.split(',');
+            System.debug(lstappId);
+            
             system.debug('SecApiScanProjectCounter__c value:' + lstRelease[0].SecApiScanProjectCounter__c);
             system.debug('SecApiScanProjectCounter__c:' + lstRelease[0].SecApiScanProjectCounter__c.intValue());
             scanCounter  =  lstRelease[0].SecApiScanProjectCounter__c != null ?  lstRelease[0].SecApiScanProjectCounter__c.intValue() : 0;
@@ -399,7 +403,7 @@ public with sharing class SecAPIReleaseScanController {
                    currentIterationProjectID = UniqueProjectIDs[0];//APPSVC047063 
                 }   
                 else{
-                   currentIterationProjectID = UniqueProjectIDs[scanCounter]; //APPSVC047063
+                   currentIterationProjectID = UniqueProjectIDs[scanCounter-1]; //APPSVC047063
                 }
                 //UniqueProjectIDs[scanCounter-2];
             system.debug('@@@currentIterationProjectID'+currentIterationProjectID);
