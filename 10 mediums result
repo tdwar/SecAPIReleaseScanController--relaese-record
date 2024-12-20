@@ -1,0 +1,195 @@
+SAST
+10
+0 10 0 0
+apex
+FLS_Update
+Description: The application attempts to access an object in @DestinationElement in @DestinationFile at line
+@DestinationLine without checking if a user is authorized to do so. The object is updated with the data
+provided at @SourceElement in @SourceFile at line @SourceLine.
+Query Path: Apex/Apex_Force_com_Serious_Security_Risk/FLS_Update
+Total Flows: 10
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: error_message__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 367
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+14/19
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: sca_error_message__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: scascan
+Source line: 549
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: scascan
+Destination line: 562
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: recordtypeid
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 366
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+15/19
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: id
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: scascan
+Source line: 547
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: scascan
+Destination line: 562
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: release_copado__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 364
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+16/19
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: sca_scan_id__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: scascan
+Source line: 538
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: scascan
+Destination line: 562
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: id
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 363
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+17/19
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: secapi_scan_id__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 357
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: sca_status_url__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: scascan
+Source line: 535
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: scascan
+Destination line: 562
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
+18/19
+RECURRENT
+State: To Verify
+Status: RECURRENT
+Group name: Apex_Force_com_Serious_Security_Risk
+First scan id: 09b365ea-c629-475d-bfe9-29355faca3a5
+Found date: 2024-12-20 08:11:01 +0000 UTC
+First found date: 2024-12-19 13:28:08 +0000 UTC
+Source element: status_url__c
+Source file: /classes/SecAPIReleaseScanController.cls
+Source method: secapiscan
+Source line: 353
+Destination element: lstsecscanresults
+Destination file: /classes/SecAPIReleaseScanController.cls
+Destination method: secapiscan
+Destination line: 382
+Compliances: OWASP Top 10 2021, ASA Premium, OWASP ASVS, PCI DSS v3.2.1, CWE top 25,
+MOIS(KISA) Secure Coding 2021, PCI DSS v4.0, SANS top 25, Top Tier
+CWE: CWE-285
