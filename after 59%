@@ -178,3 +178,46 @@ public class SecAPIReleaseScanController_Test {
         Test.stopTest();
     }
 }
+
+
+
+@isTest
+    static void testGetSCASecurityScoreCardSuccess() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+                200, 'Complete', '{"scoreCard": "A"}', null
+            );
+            Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+            String scoreCard = SecAPIReleaseScanController.getSCASecurityScoreCard('score/test', releaseRec.Id);
+            System.assertNotEquals(null, scoreCard, 'ScoreCard should not be null.');
+            System.assertEquals('A', scoreCard, 'Expected scoreCard value to be A.');
+        } catch (Exception e) {
+            System.assert(false, 'Unexpected exception: ' + e.getMessage());
+        } finally {
+            Test.stopTest();
+        }
+    }
+
+    @isTest
+    static void testGetSCASecurityScoreCardError() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+                400, 'Error', '{}', null
+            );
+            Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+            SecAPIReleaseScanController.getSCASecurityScoreCard('score/test-error', releaseRec.Id);
+            System.assert(false, 'Expected exception not thrown for SCA score card error.');
+        } catch (Exception e) {
+            System.assert(e.getMessage().contains('Error'), 'Expected error message for failed SCA score card fetch.');
+        } finally {
+            Test.stopTest();
+        }
+    }
