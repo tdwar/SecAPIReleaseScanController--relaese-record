@@ -1,0 +1,52 @@
+@isTest
+static void testRunSecAPIStatusCheck() {
+    // Set up a mock release record
+    copado__Release__c releaseRec = new copado__Release__c(
+        Name = 'Test Release',
+        SecApiScanProjectCounter__c = 3, // Total scans required
+        CurrentScanCount__c = 1          // Scans completed
+    );
+    insert releaseRec;
+
+    // Mock a successful HTTP response for a scan
+    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+        200, 
+        'Complete', 
+        '{"status": "FINISHED"}', 
+        null
+    );
+    Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+    Test.startTest();
+    try {
+        // Execute the method
+        SecAPIReleaseScanController.runSecAPIStatusCheck('https://test-secapi/status/123', releaseRec.Id);
+
+        // Verify scan count was incremented
+        copado__Release__c updatedRelease = [SELECT CurrentScanCount__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals(2, (Integer)updatedRelease.CurrentScanCount__c, 'Current scan count should increment.');
+
+    } catch (Exception e) {
+        System.assert(false, 'Unexpected exception thrown: ' + e.getMessage());
+    }
+    Test.stopTest();
+
+    // Additional assertions for failure cases
+    Test.startTest();
+    try {
+        // Test with invalid URL
+        SecAPIReleaseScanController.runSecAPIStatusCheck('', releaseRec.Id);
+        System.assert(false, 'Expected exception for empty status URL.');
+    } catch (AuraHandledException e) {
+        System.assert(e.getMessage().contains('Status URL is required'), 'Unexpected error message: ' + e.getMessage());
+    }
+
+    try {
+        // Test with null release ID
+        SecAPIReleaseScanController.runSecAPIStatusCheck('https://test-secapi/status/123', null);
+        System.assert(false, 'Expected exception for null release ID.');
+    } catch (AuraHandledException e) {
+        System.assert(e.getMessage().contains('Release ID cannot be null'), 'Unexpected error message: ' + e.getMessage());
+    }
+    Test.stopTest();
+}
