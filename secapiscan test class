@@ -136,3 +136,62 @@ public class SecAPIReleaseScanController_Test {
     }
 }
 
+@isTest
+public class SecAPIReleaseScanController_Test {
+    @isTest
+    static void testPreviousrunStatusCheck() {
+        // Setup: Insert mock release record
+        copado__Release__c releaseRec = new copado__Release__c(
+            Name = 'Test Release',
+            SecApiScanProjectCounter__c = 2,
+            CurrentScanCount__c = 1
+        );
+        insert releaseRec;
+
+        // Setup: Mock HTTP response for PreviousrunStatusCheck
+        String mockStatusURL = 'https://test-secapi/status/123';
+        Test.setMock(HttpCalloutMock.class, 
+            new SecApiMockHttpResponseGenerator(200, 'OK', '{"status": "FINISHED"}', null)
+        );
+
+        // Test: Call the PreviousrunStatusCheck method
+        Test.startTest();
+        String result = SecAPIReleaseScanController.PreviousrunStatusCheck(mockStatusURL, releaseRec.Id, 'SCA');
+        Test.stopTest();
+
+        // Assert: Verify the method returns the correct status
+        System.assertEquals('FINISHED', result, 'PreviousrunStatusCheck should return FINISHED.');
+    }
+
+    @isTest
+    static void testMultiRunscancheck() {
+        // Setup: Insert mock release record
+        copado__Release__c releaseRec = new copado__Release__c(
+            Name = 'Test Release',
+            SecApiScanProjectCounter__c = 3,
+            CurrentScanCount__c = 2
+        );
+        insert releaseRec;
+
+        // Test: Call the multiRunscancheck method
+        Test.startTest();
+        String result = SecAPIReleaseScanController.multiRunscancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+
+        // Assert: Verify the method returns "TRUE" when there are remaining scans
+        System.assertEquals('TRUE', result, 'multiRunscancheck should return TRUE when scans are remaining.');
+
+        // Update: Simulate a scenario where all scans are completed
+        releaseRec.CurrentScanCount__c = 3;
+        update releaseRec;
+
+        // Test: Call the multiRunscancheck method again
+        Test.startTest();
+        result = SecAPIReleaseScanController.multiRunscancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+
+        // Assert: Verify the method returns "FALSE" when all scans are completed
+        System.assertEquals('FALSE', result, 'multiRunscancheck should return FALSE when all scans are completed.');
+    }
+}
+
