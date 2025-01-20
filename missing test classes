@@ -25,3 +25,57 @@ static void testRunSecAPIStatusCheckPartialScan() {
 
     System.assertEquals(2, [SELECT CurrentScanCount__c FROM copado__Release__c WHERE Id = :releaseRec.Id].CurrentScanCount__c, 'Current scan count should increment.');
 }
+
+@isTest
+static void testRunSecAPIStatusCheckPartialScan() {
+    // Set up a mock release record for testing partial scan logic
+    copado__Release__c releaseRec = [SELECT Id, SecApiScanProjectCounter__c FROM copado__Release__c LIMIT 1];
+    releaseRec.SecApiScanProjectCounter__c = 3; // Simulate 3 projects to scan
+    releaseRec.CurrentScanCount__c = 1; // Simulate one project scan already completed
+    update releaseRec;
+
+    // Mock the HTTP response for a successful scan completion
+    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+        200, 
+        'Complete', 
+        '{"status": "FINISHED"}', 
+        null
+    );
+    Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+    Test.startTest();
+    try {
+        // Attempt to run the status check for the partial scan
+        SecAPIReleaseScanController.runSecAPIStatusCheck('status/partial-scan', releaseRec.Id);
+    } catch (AuraHandledException e) {
+        // Handle any Aura-specific exceptions
+        System.assert(false, 'Unexpected AuraHandledException: ' + e.getMessage());
+    } catch (Exception e) {
+        // Handle any other unexpected exceptions
+        System.assert(false, 'Unexpected exception: ' + e.getMessage());
+    } finally {
+        Test.stopTest();
+    }
+
+    // Verify that the current scan count incremented correctly
+    Integer updatedCount = [SELECT CurrentScanCount__c FROM copado__Release__c WHERE Id = :releaseRec.Id].CurrentScanCount__c;
+    System.assertEquals(2, updatedCount, 'Current scan count should increment to 2.');
+}
+
+@isTest
+static void testFetchScanStatusInvalidReleaseId() {
+    Test.startTest();
+    try {
+        // Attempt to fetch scan status with a null releaseId
+        String result = SecAPIReleaseScanController.fetchScanStatus(null);
+        System.assert(false, 'Expected an exception for null releaseId.');
+    } catch (AuraHandledException e) {
+        // Validate that the exception message matches expectations
+        System.assert(e.getMessage().contains('Release record not found'), 
+                      'Unexpected exception message: ' + e.getMessage());
+    } catch (Exception e) {
+        // Catch any unexpected exceptions
+        System.assert(false, 'Unexpected exception thrown: ' + e.getMessage());
+    }
+    Test.stopTest();
+}
