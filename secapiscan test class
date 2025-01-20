@@ -84,3 +84,55 @@ static void testSecApiScan() {
     Test.stopTest();
 }
 
+@isTest
+public class SecAPIReleaseScanController_Test {
+    @isTest
+    static void testPreviousrunStatusCheck() {
+        // Mock data setup
+        String mockReleaseId = 'a0B5w00000ABC123';
+        String mockStatusURL = 'https://test-secapi/status/123';
+        String scanType = 'SCA';
+
+        // Mock HTTP callout response
+        Test.startTest();
+        Test.setMock(HttpCalloutMock.class, new SecApiMockHttpResponseGenerator(200, 'Complete', '{"status": "FINISHED"}', null));
+        
+        // Test the PreviousrunStatusCheck method
+        String result = SecAPIReleaseScanController.PreviousrunStatusCheck(mockStatusURL, mockReleaseId, scanType);
+        
+        // Assert the expected result
+        System.assertEquals('FINISHED', result, 'PreviousrunStatusCheck should return FINISHED.');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testMultiRunscancheck() {
+        // Mock data setup
+        String mockReleaseId = 'a0B5w00000ABC123';
+        String scanType = 'SCA';
+
+        // Insert a mock release record
+        copado__Release__c releaseRec = new copado__Release__c(
+            Id = mockReleaseId,
+            SecApiScanProjectCounter__c = 3,
+            CurrentScanCount__c = 2
+        );
+        insert releaseRec;
+
+        // Test the multiRunscancheck method
+        String result = SecAPIReleaseScanController.multiRunscancheck(mockReleaseId, scanType);
+        
+        // Assert the expected result
+        System.assertEquals('TRUE', result, 'multiRunscancheck should return TRUE when there are remaining scans.');
+        
+        // Modify release to simulate completed scans
+        releaseRec.CurrentScanCount__c = 3;
+        update releaseRec;
+
+        result = SecAPIReleaseScanController.multiRunscancheck(mockReleaseId, scanType);
+        
+        // Assert the expected result
+        System.assertEquals('FALSE', result, 'multiRunscancheck should return FALSE when all scans are completed.');
+    }
+}
+
