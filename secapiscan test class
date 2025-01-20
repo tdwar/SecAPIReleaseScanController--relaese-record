@@ -299,3 +299,41 @@ static void testMultiRunscancheck() {
     // Assert: Verify that the method returns "FALSE"
     System.assertEquals('FALSE', result, 'multiRunscancheck should return FALSE when no scans are remaining.');
 }
+
+
+@isTest
+static void testMultiRunScancheck() {
+    // Step 1: Create and insert a mock release record
+    copado__Release__c releaseRec = new copado__Release__c(
+        Name = 'Test Release',
+        SecApiScanProjectCounter__c = 3, // Total number of scans expected
+        CurrentScanCount__c = 1,         // Current scan count
+        Unique_Appservice_Id__c = '1001,1002,1003', // Comma-separated unique app service IDs
+        Current_SAST_Run_Status__c = '1001-completed',
+        Current_SCA_Run_Status__c = '1001-completed'
+    );
+    insert releaseRec;
+
+    // Step 2: Verify the release record was inserted successfully
+    System.assertNotEquals(null, releaseRec.Id, 'Release record was not inserted successfully.');
+
+    // Step 3: Test the method for "SAS" RunType
+    Test.startTest();
+    String resultSAS = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SAS');
+    Test.stopTest();
+
+    // Assert: Verify the method returns "True" for "SAS" RunType
+    System.assertEquals('True', resultSAS, 'multiRunScancheck should return True for SAS RunType when scans are remaining.');
+
+    // Step 4: Simulate "SCA" RunType with all scans completed
+    releaseRec.CurrentScanCount__c = 3; // Set to match SecApiScanProjectCounter__c
+    update releaseRec;
+
+    // Step 5: Test the method for "SCA" RunType
+    Test.startTest();
+    String resultSCA = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SCA');
+    Test.stopTest();
+
+    // Assert: Verify the method returns "False" for "SCA" RunType when all scans are completed
+    System.assertEquals('False', resultSCA, 'multiRunScancheck should return False for SCA RunType when no scans are remaining.');
+}
