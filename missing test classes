@@ -1,0 +1,27 @@
+@isTest
+static void testFetchScanStatusInvalidReleaseId() {
+    Test.startTest();
+    try {
+        String result = SecAPIReleaseScanController.fetchScanStatus(null);
+        System.assert(false, 'Expected an exception for null releaseId.');
+    } catch (AuraHandledException e) {
+        System.assert(e.getMessage().contains('Release record not found'), 'Unexpected exception message: ' + e.getMessage());
+    }
+    Test.stopTest();
+}
+@isTest
+static void testRunSecAPIStatusCheckPartialScan() {
+    copado__Release__c releaseRec = [SELECT Id, SecApiScanProjectCounter__c FROM copado__Release__c LIMIT 1];
+    releaseRec.SecApiScanProjectCounter__c = 3; // Simulating 3 projects to scan
+    releaseRec.CurrentScanCount__c = 1; // Simulating one project scan completed
+    update releaseRec;
+
+    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', '{"status": "FINISHED"}', null);
+    Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+    Test.startTest();
+    SecAPIReleaseScanController.runSecAPIStatusCheck('status/partial-scan', releaseRec.Id);
+    Test.stopTest();
+
+    System.assertEquals(2, [SELECT CurrentScanCount__c FROM copado__Release__c WHERE Id = :releaseRec.Id].CurrentScanCount__c, 'Current scan count should increment.');
+}
