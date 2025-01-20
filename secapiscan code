@@ -1,0 +1,217 @@
+   @AuraEnabled
+    public static String secAPIScan(String releaseId) {
+        
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible() ||
+            !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Status_URL__c.isAccessible() ||
+            !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isAccessible() ||
+            !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Scan_Status__c.isAccessible() ||
+            !Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isAccessible() ||
+            !Schema.sObjectType.SEC_API_Scan_Result__c.fields.SecAPI_Scan_Id__c.isAccessible()) {
+                throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+            }
+        
+        if (!Schema.sObjectType.copado__Release__c.isAccessible() || 
+            !Schema.sObjectType.copado__Release__c.fields.SEC_API_Scan_Status__c.isAccessible()) {
+                throw new AuraHandledException('User does not have appropriate access to copado__Release__c fields.');
+            }
+        String statusURL ='';
+        String appReqId = '';
+        String resp = '';
+        String repoBranch = '';
+        String initiatingSource = '';
+        String mandatoryCol = '';
+        String guId = '';
+        String excludeFiles = '';
+        String excludeFolders = '';
+        String projectAppId ='';
+        boolean forceFlag = true;
+        Integer scanCounter = 0;
+        Integer totalstartedcompleted;
+        if (!Schema.sObjectType.copado__Release__c.isAccessible()) {
+                throw new AuraHandledException('User does not have appropriate access to copado__Release__c fields.');
+            }
+        List<copado__Release__c> toUpdateRelease = new List<copado__Release__c>();
+        List<copado__User_Story__c> lstUserStory = new List<copado__User_Story__c>();
+         List<copado__Release__c> lstRelease = new List<copado__Release__c>();
+        if (!Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible() || !Schema.sObjectType.SEC_API_Scan_Result__c.isCreateable() || !Schema.sObjectType.SEC_API_Scan_Result__c.fields.Status_URL__c.isCreateable()) {
+            throw new AuraHandledException('User do not have appropriate access to create SEC_API_Scan_Result__c records.');
+        }
+        
+        SEC_API_Scan_Result__c sr = new SEC_API_Scan_Result__c();
+        List<string> listOfProjectIDs = new List<string>();
+        
+              
+        try{
+            if(String.isNotEmpty(releaseId) && Schema.sObjectType.Copado__User_Story__c.isAccessible()){
+            // lstUserStory = [SELECT Id,Copado__Project__c, Copado__Project__r.App_Id__c,copado__Project__r.Exclude_Files__c,copado__Project__r.Exclude_Folders__c FROM Copado__User_Story__c Where copado__Release__c =: releaseId AND Copado__Project__r.App_Id__c != null];
+               lstUserStory = [SELECT Id,Copado__Project__c, Copado__Project__r.SNOW_APPSVCID__c FROM Copado__User_Story__c Where copado__Release__c =: releaseId AND Copado__Project__r.App_Id__c != null];
+            }
+            if(String.isNotEmpty(releaseId) && Schema.sObjectType.copado__Release__c.isAccessible()){
+                lstRelease = [select Id,Name,Artifact_Id__c, SecApiScanProjectCounter__c,CurrentScanCount__c,Unique_Appservice_Id__c,Current_APPSVCID__c from copado__Release__c where Id =:releaseId limit 1];
+            }
+            // add all project to list
+             for(copado__User_Story__c us : lstUserStory){
+                listOfProjectIDs.add(us.Copado__Project__r.SNOW_APPSVCID__c);
+            }
+            
+            String unqappid = lstRelease[0].Unique_Appservice_Id__c;
+			List<String> lstunqappid = unqappid.split(',');
+			system.debug(lstunqappid[Integer.valueof(lstRelease[0].CurrentScanCount__c)]);
+			system.debug(lstunqappid.size());
+            
+            scanCounter  =  lstRelease[0].SecApiScanProjectCounter__c != null ?  lstRelease[0].SecApiScanProjectCounter__c.intValue() : 0;
+            system.debug('Scancounter Value E3' + scanCounter);
+            system.debug('@@@lstRelease[0].SecApiScanProjectCounter__c.intValue() : ' +scanCounter);
+            // remove duplicates from list
+            List<String> UniqueProjectIDs = new List<String>(new Set<String>(listOfProjectIDs));
+            system.debug('@@@UniqueProjectIDs E3: ' + UniqueProjectIDs);
+            // get current index of project
+            //string currentIterationProjectID = UniqueProjectIDs[scanCounter];
+            //string currentIterationProjectID = UniqueProjectIDs[0]; // kamal commented on Dec 22
+            string currentIterationProjectID = lstunqappid[Integer.valueof(lstRelease[0].CurrentScanCount__c)];
+            lstRelease[0].Current_APPSVCID__c=currentIterationProjectID;
+            
+            totalstartedcompleted = Integer.valueof(lstRelease[0].CurrentScanCount__c);
+            
+            
+            // get project info
+            copado__Project__c projectForSecApiCall;
+            if(Schema.sObjectType.copado__Project__c.isAccessible()){
+                projectForSecApiCall = [select App_Id__c, Exclude_Files__c, Exclude_Folders__c from copado__Project__c where SNOW_APPSVCID__c =:currentIterationProjectID limit 1];
+                // populate info for project 
+                projectAppId =projectForSecApiCall.App_Id__c;
+                excludeFiles = projectForSecApiCall.Exclude_Files__c;
+                excludeFolders = projectForSecApiCall.Exclude_Folders__c;  
+            }
+            if(Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible()){
+                // get repo branch
+                repoBranch = [Select Id,Repo_Branch__c From SEC_API_Scan_Result__c Where Release_Copado__c =: releaseId Order by CreatedDate Desc Limit 1].Repo_Branch__c;
+            }
+            //get data
+            initiatingSource = [Select Id,Value__c From Glapi_Callout_Settings__c Where Name = 'SecAPIInitiatingSource' Limit 1].Value__c;
+            mandatoryCol = [Select Id,Value__c From Glapi_Callout_Settings__c Where Name = 'SecAPIMandatoryCol' Limit 1].Value__c;
+            guID =   [Select Id,Value__c From Glapi_Callout_Settings__c Where Name = 'TechGUID' Limit 1].Value__c;
+            system.debug('repoBranch val = '+repoBranch);
+            if(totalstartedcompleted > 0){
+                forceFlag = false;
+            }
+            String reqBody = '{"repoBranchToScan": "refs/heads/'+repoBranch+'","incremental": true,"force":'+forceFlag+',"devOpsInfo": { "intiatingSource": "'+initiatingSource+'", "teamProjectName": "'+mandatoryCol+'", "teamProjectId": "'+guID+'", "buildInfo": { "buildId": "'+lstRelease[0].Artifact_Id__c+'", "buildName": "'+mandatoryCol+'", "buildDefinitionName": "'+mandatoryCol+'", "buildReason": "'+mandatoryCol+'", "buildRepositoryID": "'+mandatoryCol+'", "buildRepositoryName": "'+mandatoryCol+'", "buildSourceBranch": "refs/heads/'+repoBranch+'" }},"excludeFoldersPattern": "'+excludeFolders+'","excludeFilesPattern": "'+excludeFiles+'"}';
+            system.debug('reqBody val = '+reqBody);
+            HTTPResponse res = new HTTPResponse();
+            String endURL = '/start/'+projectAppId;
+            String recordId = [Select Id From SEC_API_Scan_Result__c Where Release_Copado__c =:ReleaseId Order by CreatedDate Desc limit 1].Id;
+            res = getCalloutResponse(endURL,'POST',reqBody);
+            system.debug('niharika 1 endurl' + endURL + 'and reqbody ..' + reqBody);
+            system.debug('niharika sast getstatuscode' + res.getStatusCode());
+            
+            if(res != null && res.getStatusCode() == 202){
+               
+                // Parse JSON response to get the statusUrl field values.
+                JSONParser parser = JSON.createParser(res.getBody());
+                while (parser.nextToken() != null) {
+                    if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                        (parser.getText() == 'statusUrl')) {
+                            parser.nextToken();
+                            // Get the value.
+                            statusURL = parser.getText();
+                        }
+                }
+                system.debug('Rama Status URL after while loop' + statusURL);
+                if(!String.isEmpty(statusUrl)){
+                    appReqId = statusUrl.substringAfter('status/');
+                    if(appReqId.length() > 0 && appReqId.contains('/')){
+                     // toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',SecurityGrade__c = '',SecAPI_Scan_Passed__c=false,Current_Glapi_Status__c='Security Scan In Progress', SecAPI_Scan_Id__c = appReqId.split('/')[1],CurrentScanCount__c =  totalstartedcompleted+1));    
+                        toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',SecurityGrade__c = '',SecAPI_Scan_Passed__c=false,Current_Glapi_Status__c='Security Scan In Progress', SecAPI_Scan_Id__c = appReqId.split('/')[1]));    
+                   
+                    }
+                }else{
+                     // toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',SecurityGrade__c = '',SecAPI_Scan_Passed__c=false,Current_Glapi_Status__c='Security Scan In Progress',CurrentScanCount__c =  totalstartedcompleted+1));
+                        toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',SecurityGrade__c = '',SecAPI_Scan_Passed__c=false,Current_Glapi_Status__c='Security Scan In Progress')); 
+                }
+                system.debug('@@@ appReqId'+appReqId);
+               
+                sr.Id = recordId;
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Status_URL__c.isUpdateable()) {
+                        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+                    }
+                sr.Status_URL__c = appReqId;
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isAccessible()) {
+                        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+                    }
+                sr.Release_Copado__c = releaseId;
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Scan_Status__c.isAccessible()) {
+                        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+                    }
+                sr.Scan_Status__c = 'Callout 1 Completed';
+                if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isAccessible()) {
+                        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+                    }
+                sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.SecAPI_Scan_Id__c.isUpdateable()) {
+                        throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+                    }
+                sr.SecAPI_Scan_Id__c = appReqId.split('/')[1];
+                resp = appReqId;
+                if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Error_Message__c.isAccessible()) {
+                    throw new AuraHandledException('User does not have appropriate access to Error_Message__c field.');
+                }
+            else{
+                System.debug('0001');
+               // if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Id.isUpdateable()) {
+              // throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+           // }
+                sr.Id = recordId;
+                System.debug('0002');
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Release_Copado__c.isUpdateable()) {
+                throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+            }
+                System.debug('0003');
+                sr.Release_Copado__c = releaseId;
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Scan_Status__c.isAccessible()) {
+                throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+            }
+                System.debug('0004');
+                sr.Scan_Status__c = 'Callout 1 Failed';
+                 if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.RecordTypeId.isUpdateable()) {
+                throw new AuraHandledException('User does not have appropriate access to SEC_API_Scan_Result__c fields.');
+            }
+                System.debug('0005');
+                sr.RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId();
+                if (!Schema.sObjectType.SEC_API_Scan_Result__c.fields.Error_Message__c.isUpdateable()) {
+                    throw new AuraHandledException('User does not have appropriate access to Error_Message__c field.');
+                }
+                sr.Error_Message__c = 'Status Code '+res.getStatusCode() +', Error Message '+res.getBody();
+                System.debug('0006');
+                if (!Schema.sObjectType.copado__Release__c.fields.SEC_API_Scan_Status__c.isUpdateable() ||
+                    !Schema.sObjectType.copado__Release__c.fields.SecApiScanProjectCounter__c.isUpdateable()) {
+                        throw new AuraHandledException('User does not have appropriate access to update copado__Release__c fields.');
+                    }
+                
+                System.debug('0007');
+                //change made by kamal in updating SEC_API_Scan_Status__c='completed ' to in progress
+                //toUpdateRelease.add(new copado__Release__c(Id=releaseId,SEC_API_Scan_Status__c='In-Progress',Current_Glapi_Status__c = 'Security Scan Failed', SecApiScanProjectCounter__c = scanCounter));  //Needs to verify1
+                //resp = 'Error occured during 1st Callout. Response Status Code : ' +res.getStatusCode()+ ', Response Status : ' + res.getStatus()+', Response Message : ' + res.getBody();
+                System.debug('0008');
+            }
+            if(!toUpdateRelease.isEmpty() && Schema.sObjectType.copado__Release__c.isUpdateable()){
+                System.debug('0009'+toUpdateRelease);
+                if(Integer.valueof(lstRelease[0].CurrentScanCount__c) ==0){
+                System.debug('*******************************-update 4');
+                update toUpdateRelease;
+                }    
+            }
+            List<SEC_API_Scan_Result__c> lstSecScanResults =  new List<SEC_API_Scan_Result__c>{sr};
+                if(!lstSecScanResults.isEmpty() && Schema.sObjectType.SEC_API_Scan_Result__c.isUpdateable() && Schema.sObjectType.SEC_API_Scan_Result__c.isAccessible()){
+                    System.debug('*******************************-update 5');
+                    System.debug('00010'+lstSecScanResults);
+                     if(Integer.valueof(lstRelease[0].CurrentScanCount__c) ==0){
+                    Update lstSecScanResults;
+                     }
+                }
+            }
+        }catch(Exception e){
+            system.debug('exception '+e +e.getCause()+e.getLineNumber()+e.getMessage());
+            throw new AuraHandledException('Error occured during 1st Callout. Exception Cause : ' +e.getCause()+ ' at Line No. ' + e.getLineNumber()+' Error Message : ' + e.getMessage());
+		 } 
+        return resp;
+    }
