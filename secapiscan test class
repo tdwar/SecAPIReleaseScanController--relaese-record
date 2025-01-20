@@ -1,0 +1,28 @@
+   
+  
+    @isTest static void testSecApiScan() {
+        copado__Project__c pro = [select id,app_Id__c from copado__Project__c where name='MY JIRA Project' limit 1];
+        List<copado__User_Story__c> userStory = [select id, copado__status__c,SEC_API_Scan_Status__c, copado__Project__c,copado__Project__r.Project_External_Id__c,copado__Project__r.Workspace_Id__c,copado__Project__r.Copado_Integration_Setting__r.Named_Credential__c from copado__User_Story__c where copado__project__r.name = 'MY JIRA Project' limit 1];
+        copado__Release__c releaseRec =[Select id From copado__Release__c Where Id != null Order By CreatedDate Desc Limit 1];
+        Sec_Api_Scan_Result__c srItem = new Sec_Api_Scan_Result__c(Release_Copado__c=releaseRec.Id,RecordTypeId=Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId());
+        insert srItem;
+        
+        SecApiMockHttpResponseGenerator fakeresponse = new SecApiMockHttpResponseGenerator(202, 'Complete', '{"statusUrl" : "status/abc/asd"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+        Test.startTest();
+        try {
+            //SecAPIReleaseScanController.secAPIScan(releaseRec.Id);
+            String response = SecAPIReleaseScanController.secAPIScan(releaseRec.Id);
+           
+            system.assertEquals('Not Started',releaseRec.SEC_API_Scan_Status__c);
+            System.assertNotEquals('', 'Response for SecApi scan should not be empty.');
+        } catch (AuraHandledException e) {
+            Assert.isNotNull(e);
+            
+        }
+        Test.stopTest();
+    }
+
+
+System.SObjectException: SObject row was retrieved via SOQL without querying the requested field: copado__Release__c.SEC_API_Scan_Status__c
+Class.SecAPIReleaseScanController_Test.testSecApiScan: line 102, column 1
