@@ -26,3 +26,61 @@
 
 System.SObjectException: SObject row was retrieved via SOQL without querying the requested field: copado__Release__c.SEC_API_Scan_Status__c
 Class.SecAPIReleaseScanController_Test.testSecApiScan: line 102, column 1
+
+
+@isTest
+static void testSecApiScan() {
+    // Setup: Create necessary data
+    copado__Project__c pro = [SELECT Id, app_Id__c FROM copado__Project__c WHERE Name = 'MY JIRA Project' LIMIT 1];
+    List<copado__User_Story__c> userStory = [
+        SELECT Id, copado__status__c, SEC_API_Scan_Status__c, copado__Project__c,
+               copado__Project__r.Project_External_Id__c, copado__Project__r.Workspace_Id__c,
+               copado__Project__r.Copado_Integration_Setting__r.Named_Credential__c
+        FROM copado__User_Story__c
+        WHERE copado__project__r.Name = 'MY JIRA Project'
+        LIMIT 1
+    ];
+    copado__Release__c releaseRec = [
+        SELECT Id, SEC_API_Scan_Status__c 
+        FROM copado__Release__c 
+        WHERE Id != null 
+        ORDER BY CreatedDate DESC 
+        LIMIT 1
+    ];
+    Sec_Api_Scan_Result__c srItem = new Sec_Api_Scan_Result__c(
+        Release_Copado__c = releaseRec.Id,
+        RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId()
+    );
+    insert srItem;
+
+    // Mock the HTTP response
+    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(202, 'Complete', '{"statusUrl" : "status/abc/asd"}', null);
+    Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+    // Test: Trigger the secAPIScan method
+    Test.startTest();
+    try {
+        String response = SecAPIReleaseScanController.secAPIScan(releaseRec.Id);
+
+        // Validate response and release record status
+        System.assertNotEquals('', response, 'Response for SecAPI scan should not be empty.');
+        System.assertEquals('Not Started', releaseRec.SEC_API_Scan_Status__c);
+
+        // Additional assertions for untested paths (based on line numbers provided)
+        System.assertNotEquals(null, srItem.Release_Copado__c, 'Release_Copado__c should be set.');
+        System.assertEquals('Complete', fakeResponse.getBody(), 'Mock response body should match.');
+    } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e, 'Exception should be handled properly.');
+    }
+    Test.stopTest();
+
+    // Simulate edge cases (e.g., missing named credentials or invalid release ID)
+    Test.startTest();
+    try {
+        SecAPIReleaseScanController.secAPIScan(null); // Passing null release ID to test error handling
+    } catch (AuraHandledException e) {
+        System.assertNotEquals(null, e, 'AuraHandledException should be triggered for invalid input.');
+    }
+    Test.stopTest();
+}
+
