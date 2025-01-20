@@ -195,3 +195,44 @@ public class SecAPIReleaseScanController_Test {
     }
 }
 
+@isTest
+static void testMultiRunscancheck() {
+    // Setup: Create and insert a mock release record
+    copado__Release__c releaseRec = new copado__Release__c(
+        Name = 'Test Release',
+        SecApiScanProjectCounter__c = 3, // Total number of scans expected
+        CurrentScanCount__c = 2         // Current scan count
+    );
+    insert releaseRec;
+
+    // Ensure that related user stories exist, if required by multiRunscancheck
+    List<copado__User_Story__c> userStories = new List<copado__User_Story__c>();
+    for (Integer i = 0; i < 2; i++) {
+        userStories.add(new copado__User_Story__c(
+            Name = 'Test User Story ' + i,
+            copado__Release__c = releaseRec.Id,
+            copado__Project__c = null // Update if the method requires project data
+        ));
+    }
+    insert userStories;
+
+    // Test: Call the multiRunscancheck method with valid data
+    Test.startTest();
+    String result = SecAPIReleaseScanController.multiRunscancheck(releaseRec.Id, 'SCA');
+    Test.stopTest();
+
+    // Assert: Verify the method returns "TRUE" when scans are remaining
+    System.assertEquals('TRUE', result, 'multiRunscancheck should return TRUE when scans are remaining.');
+
+    // Update: Simulate a scenario where all scans are completed
+    releaseRec.CurrentScanCount__c = 3; // Match SecApiScanProjectCounter__c to indicate no remaining scans
+    update releaseRec;
+
+    // Test: Call the multiRunscancheck method again
+    Test.startTest();
+    result = SecAPIReleaseScanController.multiRunscancheck(releaseRec.Id, 'SCA');
+    Test.stopTest();
+
+    // Assert: Verify the method returns "FALSE" when all scans are completed
+    System.assertEquals('FALSE', result, 'multiRunscancheck should return FALSE when all scans are completed.');
+}
