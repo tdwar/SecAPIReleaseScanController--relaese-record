@@ -1,0 +1,51 @@
+@isTest
+public class SecAPIReleaseScanControllerTest {
+    @isTest
+    static void testRunSCAStatusCheck() {
+        // Create a test project
+        copado__Project__c project = new copado__Project__c(Name = 'MY JIRA Project', App_Id__c = '12345');
+        insert project;
+
+        // Create a test release
+        copado__Release__c releaseRec = new copado__Release__c(Name = 'Test Release', 
+            CurrentScanCount__c = 1, SecApiScanProjectCounter__c = 2, 
+            Current_SAST_Run_Status__c = 'FINISHED', Current_SCA_Run_Status__c = 'PENDING');
+        insert releaseRec;
+
+        // Create a test user story associated with the release and project
+        copado__User_Story__c userStory = new copado__User_Story__c(
+            copado__Release__c = releaseRec.Id,
+            copado__Project__c = project.Id
+        );
+        insert userStory;
+
+        // Create a test scan result
+        SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
+            copado_User_Story__c = userStory.Id,
+            SCA_scan_Status__c = 'In Progress'
+        );
+        insert scanResult;
+
+        // Mock HTTP response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', 
+            '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        // Start the test
+        Test.startTest();
+
+        // Call the method to test
+        SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
+
+        // Verify scan result updates
+        SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
+        System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
+        System.assertEquals('https://test.com', updatedScanResult.Json_Report__c);
+
+        // Verify release updates
+        copado__Release__c updatedRelease = [SELECT SCA_Scan_Status__c, Current_Glapi_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals('Completed', updatedRelease.SCA_Scan_Status__c);
+
+        Test.stopTest();
+    }
+}
