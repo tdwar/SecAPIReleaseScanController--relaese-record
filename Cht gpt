@@ -190,4 +190,71 @@ public class SecAPIReleaseScanControllerTest {
     }
 }
 
+@isTest
+static void testRunSCAStatusCheck() {
+    // Step 1: Create mock data
+    copado__Project__c project = [SELECT Id, App_Id__c FROM copado__Project__c WHERE Name = 'MY JIRA Project' LIMIT 1];
+
+    copado__Release__c releaseRec = new copado__Release__c(
+        Name = 'Test Release',
+        CurrentScanCount__c = 1,
+        SecApiScanProjectCounter__c = 2,
+        Current_SAST_Run_Status__c = 'FINISHED',
+        Current_SCA_Run_Status__c = 'PENDING'
+    );
+    insert releaseRec;
+
+    copado__User_Story__c userStory = new copado__User_Story__c(
+        copado__Release__c = releaseRec.Id,
+        copado__Project__c = project.Id
+    );
+    insert userStory;
+
+    SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
+        copado_User_Story__c = userStory.Id,
+        SCA_scan_Status__c = 'In Progress'
+    );
+    insert scanResult;
+
+    // Step 2: Mock HTTP response
+    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+        200,
+        'Complete',
+        '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}',
+        null
+    );
+    Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+    // Step 3: Mock additional methods
+    Test.startTest();
+    Test.setMock(SecApiTestUtil.class, new SecApiTestUtil() {
+        override public String fetchScanStatus(String releaseId) {
+            return 'https://mock-status-url.com';
+        }
+        override public String PreviousrunStatusCheck(String statusURL, String releaseId, String scanType) {
+            return 'FINISHED';
+        }
+        override public String secAPIScan(String releaseId) {
+            return 'https://mock-sec-api-url.com';
+        }
+        override public String SCAScan(String releaseId) {
+            return 'https://mock-sca-scan-url.com';
+        }
+        override public String getSCASecurityScoreCard(String appId, String releaseId) {
+            return 'A+';
+        }
+    });
+
+    // Call the method under test
+    SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
+
+    // Step 4: Verify results
+    SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
+    System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
+
+    copado__Release__c updatedRelease = [SELECT SCA_Scan_Status__c, Current_Glapi_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+    System.assertEquals('Completed', updatedRelease.SCA_Scan_Status__c);
+
+    Test.stopTest();
+}
 
