@@ -1,0 +1,208 @@
+@AuraEnabled
+    public Static scanStatusWrapper runSCAStatusCheck(String statusURLSCA ,String releaseId) {
+        scanStatusWrapper resposeRes = new scanStatusWrapper();
+        scanStatusWrapper resposeResSCA = new scanStatusWrapper();
+        //String currentStatus = '';
+        String jsonReport = '';
+        String appReqIdSCA = '';
+        String pdfReport = '';
+        String xmlReport = '';
+        String scoreCard = '';
+        String message = '';
+        String submitedDateTime = '';
+        Integer scanCounter = 0;
+        //statusURLSCA = appReqIdSCA;
+        SEC_API_Scan_Result__c sr = new SEC_API_Scan_Result__c();
+        List<copado__Release__c> toUpdateReleases = new List<copado__Release__c>();
+        copado__Release__c releaseDetails = [SELECT Id,SecApiScanProjectCounter__c,CurrentScanCount__c,Current_SAST_Run_Status__c,Current_SCA_Run_Status__c  FROM copado__Release__c Where id =: releaseId limit 1];
+        scanCounter = releaseDetails.CurrentScanCount__c != null ? releaseDetails.CurrentScanCount__c.intValue() : 0;
+        List<string> listOfProjectIDs = new List<string>();
+        HTTPResponse res = new HTTPResponse();
+        for(copado__User_Story__c us : [SELECT Id,Copado__Project__c,Copado__Project__r.SNOW_APPSVCID__c , Copado__Project__r.App_Id__c,copado__Project__r.Exclude_Files__c,copado__Project__r.Exclude_Folders__c FROM Copado__User_Story__c Where copado__Release__c =: releaseId AND Copado__Project__r.App_Id__c != null]){
+            listOfProjectIDs.add(us.Copado__Project__r.SNOW_APPSVCID__c);
+        }
+          List<String> UniqueProjectIDs = new List<String>(new Set<String>(listOfProjectIDs));
+        system.debug('UniqueProjectIDs : '+ UniqueProjectIDs);
+        system.debug('Rama SCA STatus URL : '+ statusURLSCA); //We get NULL - Needs to be fixed
+        String endUrl =  '/status/'+statusURLSCA;
+        system.debug('EndURL : '+endUrl);
+        try{
+            
+            List<SEC_API_Scan_Result__c> secResList = getScanResultRecord(releaseId);
+            system.debug('secResList : '+secResList);
+            system.debug('endURL : '+endURL);
+            system.debug('ReleaseId : '+ReleaseId);
+            res =  getSCACalloutResponse(endURL,'GET',null,ReleaseId);
+            system.debug('res : '+res);
+            system.debug('res.getStatusCode() : '+res.getStatusCode());
+            if(res != null && res.getStatusCode() == 200){
+                JSONParser parser = JSON.createParser(res.getBody());
+                system.debug('11/13 res in SCA api : '+ res.getBody());
+                while (parser.nextToken() != null) {
+                    if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                        (parser.getText() == 'status')) {
+                            parser.nextToken();
+                            resposeRes.currentStatus = parser.getText();
+                            system.debug('Rama SCA current status value :' + resposeRes.currentStatus);
+                        }
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'jsonReport')) {
+                                 parser.nextToken();
+                                 jsonReport = parser.getText();
+                             } 
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'pdfReport')) {
+                                 parser.nextToken();
+                                 pdfReport = parser.getText();
+                             }
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'xmlReport')) {
+                                 parser.nextToken();
+                                 xmlReport = parser.getText();
+                             }
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'scoreCard')) {
+                                 parser.nextToken();
+                                 scoreCard = parser.getText();
+                             }
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'submitedDateTime')) {
+                                 parser.nextToken();
+                                 submitedDateTime = parser.getText();
+                             } 
+                    else if ((parser.getCurrentToken() == JSONToken.FIELD_NAME) && 
+                             (parser.getText() == 'message')) {
+                                 parser.nextToken();
+                                 message = parser.getText();
+                             }
+                }
+                system.debug('Parsing completed for SCA ...');
+                system.debug('SCA Response list : '+ secResList);
+                if(!secResList.isEmpty()){
+                    secResList[0].Json_Report__c  = jsonReport;
+                    secResList[0].SCA_Pdf_Report__c  = pdfReport;
+                    secResList[0].Xml_Report__c  = xmlReport;
+                    secResList[0].Score_Card__c  = scoreCard;
+                    if(submitedDateTime != null && String.isNotEmpty(submitedDateTime))
+                        secResList[0].SCA_Submitted_Date__c = convertStringtoDateTime(submitedDateTime);
+                        secResList[0].SCA_Error_Message__c  = message;
+                    system.debug(' Current status Finished ? '+ resposeRes.currentStatus);
+                    //resposeRes.currentStatus = 'FINISHED';
+                    if(resposeRes.currentStatus == 'FINISHED'){
+                        system.debug('SCA scanCounter: '+scanCounter);
+                        system.debug('SCA UniqueProjectIDs.size(): '+UniqueProjectIDs.size());
+                        
+                         Boolean scaRequired = getSCAvalue (releaseId); 
+                         
+                         //String multiapp = multiRunScancheck(releaseId ,'SCA');
+                         String multiapp; 
+                        
+                        if(Integer.valueof(releaseDetails.CurrentScanCount__c) < Integer.valueof(releaseDetails.SecApiScanProjectCounter__c)){
+                           multiapp = 'TRUE'; 
+                        }
+                        Else{
+                          multiapp = 'FALSE';
+                        }
+                        
+                        
+                        
+                         String StatURL = fetchScanStatus (releaseId); //1/14/2025
+                             
+                         String SASpreviousStat = PreviousrunStatusCheck (StatURL,releaseId,'SAS');
+                        
+                         system.debug('####################################'+scaRequired + multiapp + SASpreviousStat);
+                        //if(scanCounter != UniqueProjectIDs.size() && CurrRunstatus == releaseDetails.Current_SAST_Run_Status__c){
+                        //
+                        if(scaRequired == true && multiapp =='TRUE' && SASpreviousStat == 'FINISHED' ){    
+                             resposeRes.currentStatus = 'PARTIAL FINISHED';                             
+                             resposeRes.statusURL =  secAPIScan(releaseID);
+                             resposeResSCA.statusURL =  SCAScan(releaseID);
+                            system.debug(' SAS Status URL at partial finish : '+resposeRes.statusURL);
+                            //system.debug(' SAS Status URL at partial finish : '+resposeResSCA.statusURL);
+                            if(resposeRes.statusURL.contains('error')){
+                                resposeRes.currentStatus = '2nd Sec API call Error occured';
+                            }
+                            
+                            if(resposeResSCA.statusURL.contains('error')){
+                                resposeRes.currentStatus = '2nd Sec API call Error occured';
+                            }
+                            
+                            
+                        }
+                        else if(scaRequired == false && multiapp =='TRUE' && SASpreviousStat == 'FINISHED' ){
+                             resposeRes.currentStatus = 'PARTIAL FINISHED';                            
+                             resposeRes.statusURL =  secAPIScan(releaseID);
+                            system.debug(' SCA Status URL at partial finish : '+resposeRes.statusURL);
+                            if(resposeRes.statusURL.contains('error')){
+                                resposeRes.currentStatus = '2nd Sec API call Error occured';
+                            }                            
+                        }    
+                        else if (multiapp =='FALSE'){
+                            system.debug('Score card status hit');
+                            string securityGrade = getSCASecurityScoreCard(UniqueProjectIDs[0], releaseId);
+                            if(securityGrade.toLowerCase().contains('error')){
+                                resposeRes.currentStatus = 'ERROR';
+                                secResList[0].SCA_scan_Status__c = 'Callout 2.5 Failed';
+                                toUpdateReleases.add(new copado__Release__c(Id=releaseId,SCA_Scan_Status__c='Completed',Current_Glapi_Status__c='Security Scan Failed'));
+                            }
+                            else{
+                                secResList[0].SCA_scan_Status__c = 'Callout 2 Completed'; 
+                                
+                                                                
+                            }  
+                        }
+                    }
+                    else if(resposeRes.currentStatus == 'ERROR' || resposeRes.currentStatus == 'CANCELED' || resposeRes.currentStatus == 'FAILED'){
+                        secResList[0].SCA_scan_Status__c = 'Callout 2 Failed';
+                        toUpdateReleases.add(new copado__Release__c(Id=releaseId,SCA_Scan_Status__c='Completed',Current_Glapi_Status__c='Security Scan Failed'));
+                    }
+                    
+                }
+            }
+            else{
+                secResList[0].SCA_scan_Status__c = 'Callout 2 Failed';
+                secResList[0].SCA_Error_Message__c = 'Status Code '+res.getStatusCode() +', Error Message '+res.getBody();
+                toUpdateReleases.add(new copado__Release__c(Id=releaseId,SCA_Scan_Status__c='Completed',Current_Glapi_Status__c='Security Scan Failed'));
+                resposeRes.currentStatus = 'Error occured during 2nd Callout. Response Status Code : ' +res.getStatusCode()+ ', Response Status : ' + res.getStatus()+', Response Message : ' + res.getBody();
+            }
+            
+            if(Schema.sObjectType.SEC_API_Scan_Result__c.isUpdateable()){
+                System.debug('*******************************-update 11');
+                update secResList;
+            }
+            if(!toUpdateReleases.isEmpty() && Schema.sObjectType.copado__Release__c.isUpdateable()){
+                System.debug('*******************************-update 12');
+                update toUpdateReleases;
+            }
+             
+                    
+            
+            
+            
+        }catch(Exception e){
+            system.debug('exception '+e +e.getCause()+e.getLineNumber()+e.getMessage());
+            throw new AuraHandledException('Error occured during 2nd Callout. Exception Cause : ' + +e.getCause()+ ' at Line No. ' + e.getLineNumber()+' Error Message : ' + e.getMessage());
+            
+        }
+        
+        system.debug('resposeRes : '+resposeRes);
+        
+        return resposeRes;
+    }
+
+
+@isTest static void testRunSCAStatusCheck() {
+        copado__Project__c pro = [select id,app_Id__c from copado__Project__c where name='MY JIRA Project' limit 1];
+        Sec_Api_Scan_Result__c srItem = [Select id, copado_user_story__c from Sec_Api_Scan_Result__c];
+        copado__Release__c releaseRec =[Select id From copado__Release__c Limit 1];
+        Test.startTest();
+        try{
+        SecApiMockHttpResponseGenerator fakeresponse = new SecApiMockHttpResponseGenerator(200, 'Complete', '{"jsonReport": "https://test.com","pdfReport": "https://test.com","xmlReport": "https://test.com","scoreCard": "https://test.com","status": "FINISHED","submitedDateTime": "Monday, 01 January 2020 01:01:01","message": "test"}', null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+        SecAPIReleaseScanController.runSCAStatusCheck('abc',releaseRec.Id);
+        }catch(Exception e){
+        System.assertEquals(1,[select id from sec_api_scan_result__c].size());
+        Test.stopTest();
+        }
+    }
+
