@@ -258,3 +258,108 @@ static void testRunSCAStatusCheck() {
     Test.stopTest();
 }
 
+@isTest
+public class RunSCAStatusCheckTest {
+
+    @isTest
+    static void testRunSCAStatusCheck() {
+        Test.startTest();
+        try {
+            // Test data for multiapp == 'TRUE'
+            copado__Release__c releaseMultiAppTrue = new copado__Release__c(
+                Name = 'Test Release MultiApp True',
+                SecApiScanProjectCounter__c = 2,
+                CurrentScanCount__c = 1,
+                Current_SAST_Run_Status__c = 'FINISHED',
+                Current_SCA_Run_Status__c = 'PENDING'
+            );
+            insert releaseMultiAppTrue;
+
+            Copado__User_Story__c userStoryTrue = new Copado__User_Story__c(
+                Name = 'Test User Story True',
+                copado__Release__c = releaseMultiAppTrue.Id,
+                Copado__Project__c = 'Test Project',
+                Copado__Project__r = new Copado__Project__c(
+                    SNOW_APPSVCID__c = '12345',
+                    App_Id__c = 'TestApp',
+                    Exclude_Files__c = 'none',
+                    Exclude_Folders__c = 'none'
+                )
+            );
+            insert userStoryTrue;
+
+            // Test data for multiapp == 'FALSE'
+            copado__Release__c releaseMultiAppFalse = new copado__Release__c(
+                Name = 'Test Release MultiApp False',
+                SecApiScanProjectCounter__c = 1,
+                CurrentScanCount__c = 1,
+                Current_SAST_Run_Status__c = 'FINISHED',
+                Current_SCA_Run_Status__c = 'PENDING'
+            );
+            insert releaseMultiAppFalse;
+
+            Copado__User_Story__c userStoryFalse = new Copado__User_Story__c(
+                Name = 'Test User Story False',
+                copado__Release__c = releaseMultiAppFalse.Id,
+                Copado__Project__c = 'Test Project',
+                Copado__Project__r = new Copado__Project__c(
+                    SNOW_APPSVCID__c = '67890',
+                    App_Id__c = 'TestApp2',
+                    Exclude_Files__c = 'none',
+                    Exclude_Folders__c = 'none'
+                )
+            );
+            insert userStoryFalse;
+
+            SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
+                Name = 'Test Scan Result',
+                SCA_scan_Status__c = 'PENDING',
+                SCA_Pdf_Report__c = null,
+                Xml_Report__c = null,
+                Json_Report__c = null,
+                Score_Card__c = null
+            );
+            insert scanResult;
+
+            // Set up mock HTTP callout response
+            Test.setMock(HttpCalloutMock.class, new RunSCAStatusCheckMock());
+
+            // Call method for multiapp == 'TRUE'
+            String statusURLSCA = '12345';
+            scanStatusWrapper resultTrue = SecApiHandler.runSCAStatusCheck(statusURLSCA, releaseMultiAppTrue.Id);
+
+            // Assert the results for multiapp == 'TRUE'
+            System.assertNotEquals(null, resultTrue);
+            System.assertEquals('PARTIAL FINISHED', resultTrue.currentStatus);
+
+            // Call method for multiapp == 'FALSE'
+            scanStatusWrapper resultFalse = SecApiHandler.runSCAStatusCheck(statusURLSCA, releaseMultiAppFalse.Id);
+
+            // Assert the results for multiapp == 'FALSE'
+            System.assertNotEquals(null, resultFalse);
+            System.assertNotEquals('PARTIAL FINISHED', resultFalse.currentStatus); // Assuming the status won't be 'PARTIAL FINISHED'
+
+        } catch (Exception e) {
+            System.assert(false, 'Test failed due to exception: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+}
+
+// Mock class for HTTP callout
+@isTest
+private class RunSCAStatusCheckMock implements HttpCalloutMock {
+    public HTTPResponse respond(HTTPRequest req) {
+        HttpResponse res = new HttpResponse();
+        if (req.getEndpoint().contains('/status/12345')) {
+            res.setBody('{"status":"FINISHED","jsonReport":"{...}","pdfReport":"pdfURL","xmlReport":"xmlURL","scoreCard":"A","message":"Success"}');
+            res.setStatusCode(200);
+        } else {
+            res.setStatusCode(500);
+            res.setBody('{"message":"Internal Server Error"}');
+        }
+        return res;
+    }
+}
+
+
