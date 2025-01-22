@@ -1,0 +1,121 @@
+/******************************************************************************************************************************
+Apex Class Name  : SecAPIReleaseScanController_Test
+Version          : 1.0 
+Created Date     :26/07/2021
+Function         : Test class for SecAPIReleaseScanController.
+
+***************************************************************************************************************************************************************************/
+@isTest
+public class SecAPIReleaseScanController_Test {
+
+    @testSetup
+    static void setUpMethod() {
+        // Setup initial test data...
+        Copado_Integration_Setting__c cis1 = new Copado_Integration_Setting__c(Name = 'JIRA', external_system__c = 'JIRA', Named_Credential__c = 'Test_JIRA');
+        insert cis1;
+
+        copado__Project__c project = new copado__Project__c(
+            Name = 'Test Project',
+            Copado_Integration_Setting__c = cis1.Id,
+            Workspace_Id__c = 'WorkspaceId'
+        );
+        insert project;
+
+        copado__Release__c release = new copado__Release__c(
+            Name = 'Test Release',
+            copado__Version__c = '1.0'
+        );
+        insert release;
+
+        Sec_Api_Scan_Result__c scanResult = new Sec_Api_Scan_Result__c(
+            Release_Copado__c = release.Id,
+            Scan_Status__c = 'In Progress'
+        );
+        insert scanResult;
+    }
+
+    @isTest
+    static void testGetScanResultRecord() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        List<SEC_API_Scan_Result__c> results = SecAPIReleaseScanController.getScanResultRecord(releaseRec.Id);
+        System.assertNotEquals(0, results.size(), 'There should be at least one scan result record');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetFinalSECAPISecurityScoreCard() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            String scoreCard = SecAPIReleaseScanController.getFinalSECAPISecurityScoreCard('mockScanId', releaseRec.Id);
+            System.assertNotEquals(null, scoreCard, 'The security scorecard should not be null');
+        } catch (Exception e) {
+            System.assert(false, 'Exception should not occur: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetFinalSCASecurityScoreCard() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            String scoreCard = SecAPIReleaseScanController.getFinalSCASecurityScoreCard('mockScanId', releaseRec.Id);
+            System.assertNotEquals(null, scoreCard, 'The SCA security scorecard should not be null');
+        } catch (Exception e) {
+            System.assert(false, 'Exception should not occur: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testMultiRunScanCheck() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            Boolean result = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id);
+            System.assert(result, 'The multi-run scan check should return true');
+        } catch (Exception e) {
+            System.assert(false, 'Exception should not occur in multi-run scan check: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetCalloutResponse() {
+        Test.startTest();
+        try {
+            SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(200, 'OK', '{"status":"success"}', null);
+            Test.setMock(HttpCalloutMock.class, mockResponse);
+
+            HttpResponse response = SecAPIReleaseScanController.getCalloutResponse('/mockUrl', 'GET', null);
+            System.assertEquals(200, response.getStatusCode(), 'The status code should be 200');
+        } catch (Exception e) {
+            System.assert(false, 'Exception should not occur during HTTP callout: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetSCACalloutResponse() {
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        try {
+            SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(200, 'OK', '{"status":"success"}', null);
+            Test.setMock(HttpCalloutMock.class, mockResponse);
+
+            HttpResponse response = SecAPIReleaseScanController.getSCACalloutResponse('/mockSCAUrl', 'POST', '{"key":"value"}', releaseRec.Id);
+            System.assertEquals(200, response.getStatusCode(), 'The status code for SCA callout should be 200');
+        } catch (Exception e) {
+            System.assert(false, 'Exception should not occur during SCA HTTP callout: ' + e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+}
