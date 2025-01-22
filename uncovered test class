@@ -119,3 +119,42 @@ public class SecAPIReleaseScanController_Test {
     }
 
 }
+
+@isTest
+    static void testGetReleaseDetailsSuccess() {
+        // Positive test case for getReleaseDetails
+        copado__Release__c releaseRec = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        Test.startTest();
+        copado__Release__c result = SecAPIReleaseScanController.getReleaseDetails(releaseRec.Id);
+        System.assertNotEquals(null, result, 'The release record should be fetched successfully');
+        System.assertEquals(releaseRec.Id, result.Id, 'The fetched release record ID should match');
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetReleaseDetailsNullId() {
+        // Negative test case: Null releaseId
+        Test.startTest();
+        try {
+            SecAPIReleaseScanController.getReleaseDetails(null);
+            System.assert(false, 'Exception should be thrown for null releaseId');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Users do not have appropriate access'), 'Expected access-related exception');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetReleaseDetailsNoAccess() {
+        // Negative test case: User lacks access to release object
+        Test.startTest();
+        try {
+            // Simulate lack of access by providing an invalid ID
+            SecAPIReleaseScanController.getReleaseDetails('invalidId');
+            System.assert(false, 'Exception should be thrown for inaccessible release record');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Error in fetching release details'), 'Expected exception for inaccessible release record');
+        }
+        Test.stopTest();
+    }
