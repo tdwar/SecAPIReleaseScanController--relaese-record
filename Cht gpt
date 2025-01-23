@@ -362,4 +362,40 @@ private class RunSCAStatusCheckMock implements HttpCalloutMock {
     }
 }
 
+@IsTest
+    public static void testRunSecAPIStatusCheck_HttpStatusError() {
+        // Mock HTTP response with non-200 status code (e.g., 404)
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+                404,
+                "Not Found",
+                "{}",
+                null);
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        // Call the method and assert the error message
+        try {
+            SecAPIReleaseScanController.runSecAPIStatusCheck('valid_status_url', 'valid_release_id');
+            System.assert(false, 'Expected AuraHandledException');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Error occured during 2nd Callout. Response Status Code : 404'), 'Incorrect error message');
+        }
+    }
+
+    @IsTest
+    public static void testRunSecAPIStatusCheck_Exception() {
+        // Simulate an exception in a helper method (e.g., getCalloutResponse)
+        Test.setMock(HttpCalloutMock.class, new MockHttpCallout() {
+            public HTTPResponse invoke(HttpRequest req) {
+                throw new CalloutException('Simulated Callout Exception');
+            }
+        });
+
+        // Call the method and assert the exception
+        try {
+            SecAPIReleaseScanController.runSecAPIStatusCheck('valid_status_url', 'valid_release_id');
+            System.assert(false, 'Expected AuraHandledException');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Error occured during 2nd Callout. Exception Cause : Simulated Callout Exception'), 'Incorrect error message');
+        }
+    }
 
