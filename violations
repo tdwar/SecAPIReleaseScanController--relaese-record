@@ -1,0 +1,66 @@
+@future
+    public static void listtoupdate(String RelId ,Integer Runcnt,String curstat){
+    List<copado__Release__c> toUpdateReleases = new List<copado__Release__c>();
+    toUpdateReleases.add(new copado__Release__c(Id=Id.valueof(RelId),CurrentScanCount__c =Runcnt,Current_SAST_Run_Status__c=curstat ));
+    update  toUpdateReleases;   
+        
+    }
+    @AuraEnabled
+    //VXD3378 CHANGES START 01/14/2025
+    //public static String getSCAvalue(String releaseId) {
+    public static boolean getSCAvalue(String releaseId, Integer count) {
+    //VXD3378 CHANGES END 01/14/2025
+        system.debug('Test-0001'); // B2B
+        // Check access to copado__Release__c object and its fields
+        if (!Schema.sObjectType.copado__Release__c.isAccessible() || 
+            !Schema.sObjectType.copado__Release__c.fields.Humana_Org__c.isAccessible()) {
+                throw new AuraHandledException('User does not have access to required fields or object.');
+            }
+		system.debug('VXD3378 TESTING - releaseRecord-' +releaseId); // B2B
+        copado__Release__c releaseRecord = [SELECT Humana_Org__c FROM copado__Release__c WHERE Id = :releaseId  WITH SECURITY_ENFORCED LIMIT 1 ];
+         
+        if (String.isBlank(releaseRecord.Humana_Org__c)) {
+            throw new AuraHandledException('Humana_Org__c is blank for the given release.');
+        }
+        
+      /*  if (!Schema.sObjectType.SCA_Identifier_for_ORG__mdt.isAccessible() || 
+            !Schema.sObjectType.SCA_Identifier_for_ORG__mdt.fields.OrgName__c.isAccessible() || 
+            !Schema.sObjectType.SCA_Identifier_for_ORG__mdt.fields.SCA_required__c.isAccessible()) {
+                throw new AuraHandledException('User does not have access to required metadata fields or object.');
+            }*/
+        //VXD3378 changes start 01/14/2025 
+        system.debug('VXD3378 TESTING - getSCAvalue'); // B2B
+        /*
+        List <SCA_Identifier_for_ORG__mdt> SCAdataRecords = new List <SCA_Identifier_for_ORG__mdt>();
+        String Sca_Required = 'FALSE';
+        SCAdataRecords = [SELECT OrgName__c, SCA_required__c FROM SCA_Identifier_for_ORG__mdt WHERE SCA_required__c = 'TRUE' AND OrgName__c = :releaseRecord.Humana_Org__c];
+        
+        if(SCAdataRecords.size() > 0){
+            Sca_Required = 'TRUE';
+            system.debug('ORG name: ' + SCAdataRecords[0].OrgName__c); // B2B
+            system.debug('SCA required value for ORG: ' + SCAdataRecords[0].SCA_required__c); // TRUE
+        }
+        else{
+            Sca_Required = 'FALSE';
+        }
+        Sca_Required = 'TRUE';
+        */
+        copado__Release__c rl = new copado__Release__c();
+        List <copado__Release__c> toUpdateReleases = NEW List<copado__Release__c>();
+        SCA_Identifier_for_ORG__mdt mdtRecord = [SELECT OrgName__c, SCA_required__c FROM SCA_Identifier_for_ORG__mdt WHERE OrgName__c = :releaseRecord.Humana_Org__c LIMIT 1];
+        system.debug('value of sca - getscavalue method'+ mdtRecord.SCA_required__c);
+        Boolean Sca_Required = Boolean.valueOf(mdtRecord.SCA_required__c);
+        if (Sca_Required == false){
+            if(count == 1){
+            system.debug('VXD3378 false of sca method');
+            rl = new copado__Release__c(Id=releaseId,SCA_Scan_Status__c='Not Applicable');
+			toUpdateReleases.add(rl);
+            if(!toUpdateReleases.isEmpty() && Schema.sObjectType.copado__Release__c.isUpdateable()){
+                update toUpdateReleases;
+            }}
+        }
+            
+        system.debug('value of sca boolean'+ Sca_Required);
+        //VXD3378 changes end 01/14/2025
+        return Sca_Required;
+    }
