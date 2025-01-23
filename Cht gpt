@@ -1,401 +1,64 @@
 @isTest
-public class SecAPIReleaseScanControllerTest {
+public class RunSecAPIStatusCheckTest {
+
     @isTest
-    static void testRunSCAStatusCheck() {
-        // Create a test project
-        copado__Project__c project = new copado__Project__c(Name = 'MY JIRA Project', App_Id__c = '12345');
-        insert project;
-
-        // Create a test release
-        copado__Release__c releaseRec = new copado__Release__c(Name = 'Test Release', 
-            CurrentScanCount__c = 1, SecApiScanProjectCounter__c = 2, 
-            Current_SAST_Run_Status__c = 'FINISHED', Current_SCA_Run_Status__c = 'PENDING');
-        insert releaseRec;
-
-        // Create a test user story associated with the release and project
-        copado__User_Story__c userStory = new copado__User_Story__c(
-            copado__Release__c = releaseRec.Id,
-            copado__Project__c = project.Id
-        );
-        insert userStory;
-
-        // Create a test scan result
-        SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
-            copado_User_Story__c = userStory.Id,
-            SCA_scan_Status__c = 'In Progress'
-        );
-        insert scanResult;
-
-        // Mock HTTP response
-        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete', 
-            '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-
-        // Start the test
-        Test.startTest();
-
-        // Call the method to test
-        SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
-
-        // Verify scan result updates
-        SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-        System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
-        System.assertEquals('https://test.com', updatedScanResult.Json_Report__c);
-
-        // Verify release updates
-        copado__Release__c updatedRelease = [SELECT SCA_Scan_Status__c, Current_Glapi_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
-        System.assertEquals('Completed', updatedRelease.SCA_Scan_Status__c);
-
-        Test.stopTest();
-    }
-}
-
-
-@isTest
-public class SecAPIReleaseScanControllerTest {
-    @isTest
-    static void testRunSCAStatusCheck() {
-        // Create a test project
-        copado__Project__c project = new copado__Project__c(Name = 'MY JIRA Project', App_Id__c = '12345');
-        insert project;
-
-        // Create a test release
-        copado__Release__c releaseRec = new copado__Release__c(
+    static void testRunSecAPIStatusCheck() {
+        // Setup: Create mock data
+        copado__Release__c release = new copado__Release__c(
             Name = 'Test Release',
-            CurrentScanCount__c = 1,
             SecApiScanProjectCounter__c = 2,
-            Current_SAST_Run_Status__c = 'FINISHED',
-            Current_SCA_Run_Status__c = 'PENDING'
+            CurrentScanCount__c = 1,
+            Current_SAST_Run_Status__c = 'STARTED',
+            Current_SCA_Run_Status__c = 'STARTED'
         );
-        insert releaseRec;
+        insert release;
 
-        // Create a test user story associated with the release and project
-        copado__User_Story__c userStory = new copado__User_Story__c(
-            copado__Release__c = releaseRec.Id,
-            copado__Project__c = project.Id
-        );
-        insert userStory;
-
-        // Create a test scan result
         SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
-            copado_User_Story__c = userStory.Id,
-            SCA_scan_Status__c = 'In Progress'
+            Name = 'Test Scan Result',
+            Release__c = release.Id,
+            Scan_Status__c = 'PENDING'
         );
         insert scanResult;
 
-        // Mock HTTP response
-        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete',
-            '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-
-        // Start the test
-        Test.startTest();
-
-        try {
-            // Call the method to test
-            SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
-
-            // Fetch updated scan result for verification
-            SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-            System.debug('Updated Scan Result: ' + updatedScanResult);
-
-            // Assert scan result updates
-            System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
-
-            // Fetch updated release record for verification
-            copado__Release__c updatedRelease = [SELECT SCA_Scan_Status__c, Current_Glapi_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
-            System.debug('Updated Release: ' + updatedRelease);
-
-            // Assert release updates
-            System.assertEquals('Completed', updatedRelease.SCA_Scan_Status__c);
-        } catch (Exception e) {
-            // Log exception details for debugging
-            System.debug('Exception occurred during assertion: ' + e.getMessage());
-        }
-
-        Test.stopTest();
-    }
-}
-
-@isTest
-public class SecAPIReleaseScanControllerTest {
-    @isTest
-    static void testRunSCAStatusCheck() {
-        // Create a test project
-        copado__Project__c project = new copado__Project__c(Name = 'MY JIRA Project', App_Id__c = '12345');
-        insert project;
-
-        // Create a test release
-        copado__Release__c releaseRec = new copado__Release__c(
-            Name = 'Test Release',
-            CurrentScanCount__c = 1,
-            SecApiScanProjectCounter__c = 2,
-            Current_SAST_Run_Status__c = 'FINISHED',
-            Current_SCA_Run_Status__c = 'PENDING'
-        );
-        insert releaseRec;
-
-        // Create a test user story associated with the release and project
-        copado__User_Story__c userStory = new copado__User_Story__c(
-            copado__Release__c = releaseRec.Id,
-            copado__Project__c = project.Id
-        );
-        insert userStory;
-
-        // Create a test scan result
-        SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
-            copado_User_Story__c = userStory.Id,
-            SCA_scan_Status__c = 'In Progress'
-        );
-        insert scanResult;
-
-        // Mock HTTP response
-        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Complete',
-            '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-
-        Test.startTest();
-
-        // Test for a completed scan scenario
-        SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
-        SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-        System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
-
-        // Test for an error response
-        fakeResponse = new SecApiMockHttpResponseGenerator(500, 'Error', '{"message": "Internal Server Error"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-        try {
-            SecAPIReleaseScanController.runSCAStatusCheck('errorScenario', releaseRec.Id);
-        } catch (Exception e) {
-            System.assert(e.getMessage().contains('Error occured during 2nd Callout'));
-        }
-
-        // Test for partial completion scenario
-        fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Partial Complete',
-            '{"status": "PARTIAL FINISHED", "jsonReport": "https://partial.com"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-        SecAPIReleaseScanController.runSCAStatusCheck('partialComplete', releaseRec.Id);
-        updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-        System.assertEquals('In Progress', updatedScanResult.SCA_scan_Status__c);
-
-        // Test for security score scenario
-        fakeResponse = new SecApiMockHttpResponseGenerator(200, 'Score Card',
-            '{"status": "FINISHED", "scoreCard": "A+"}', null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-        SecAPIReleaseScanController.runSCAStatusCheck('scoreScenario', releaseRec.Id);
-        updatedScanResult = [SELECT Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-        System.assertEquals('A+', updatedScanResult.Score_Card__c);
-
-        Test.stopTest();
-    }
-}
-
-@isTest
-static void testRunSCAStatusCheck() {
-    // Step 1: Create mock data
-    copado__Project__c project = [SELECT Id, App_Id__c FROM copado__Project__c WHERE Name = 'MY JIRA Project' LIMIT 1];
-
-    copado__Release__c releaseRec = new copado__Release__c(
-        Name = 'Test Release',
-        CurrentScanCount__c = 1,
-        SecApiScanProjectCounter__c = 2,
-        Current_SAST_Run_Status__c = 'FINISHED',
-        Current_SCA_Run_Status__c = 'PENDING'
-    );
-    insert releaseRec;
-
-    copado__User_Story__c userStory = new copado__User_Story__c(
-        copado__Release__c = releaseRec.Id,
-        copado__Project__c = project.Id
-    );
-    insert userStory;
-
-    SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
-        copado_User_Story__c = userStory.Id,
-        SCA_scan_Status__c = 'In Progress'
-    );
-    insert scanResult;
-
-    // Step 2: Mock HTTP response
-    SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
-        200,
-        'Complete',
-        '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", "scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "Test"}',
-        null
-    );
-    Test.setMock(HttpCalloutMock.class, fakeResponse);
-
-    // Step 3: Mock additional methods
-    Test.startTest();
-    Test.setMock(SecApiTestUtil.class, new SecApiTestUtil() {
-        override public String fetchScanStatus(String releaseId) {
-            return 'https://mock-status-url.com';
-        }
-        override public String PreviousrunStatusCheck(String statusURL, String releaseId, String scanType) {
-            return 'FINISHED';
-        }
-        override public String secAPIScan(String releaseId) {
-            return 'https://mock-sec-api-url.com';
-        }
-        override public String SCAScan(String releaseId) {
-            return 'https://mock-sca-scan-url.com';
-        }
-        override public String getSCASecurityScoreCard(String appId, String releaseId) {
-            return 'A+';
-        }
-    });
-
-    // Call the method under test
-    SecAPIReleaseScanController.runSCAStatusCheck('abc', releaseRec.Id);
-
-    // Step 4: Verify results
-    SEC_API_Scan_Result__c updatedScanResult = [SELECT SCA_scan_Status__c, Json_Report__c, SCA_Pdf_Report__c, Xml_Report__c, Score_Card__c FROM SEC_API_Scan_Result__c WHERE Id = :scanResult.Id];
-    System.assertEquals('Callout 2 Completed', updatedScanResult.SCA_scan_Status__c);
-
-    copado__Release__c updatedRelease = [SELECT SCA_Scan_Status__c, Current_Glapi_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
-    System.assertEquals('Completed', updatedRelease.SCA_Scan_Status__c);
-
-    Test.stopTest();
-}
-
-@isTest
-public class RunSCAStatusCheckTest {
-
-    @isTest
-    static void testRunSCAStatusCheck() {
-        Test.startTest();
-        try {
-            // Test data for multiapp == 'TRUE'
-            copado__Release__c releaseMultiAppTrue = new copado__Release__c(
-                Name = 'Test Release MultiApp True',
-                SecApiScanProjectCounter__c = 2,
-                CurrentScanCount__c = 1,
-                Current_SAST_Run_Status__c = 'FINISHED',
-                Current_SCA_Run_Status__c = 'PENDING'
-            );
-            insert releaseMultiAppTrue;
-
-            Copado__User_Story__c userStoryTrue = new Copado__User_Story__c(
-                Name = 'Test User Story True',
-                copado__Release__c = releaseMultiAppTrue.Id,
-                Copado__Project__c = 'Test Project',
+        List<copado__User_Story__c> userStories = new List<copado__User_Story__c>();
+        for (Integer i = 0; i < 2; i++) {
+            userStories.add(new copado__User_Story__c(
+                Name = 'Test User Story ' + i,
+                copado__Release__c = release.Id,
                 Copado__Project__r = new Copado__Project__c(
-                    SNOW_APPSVCID__c = '12345',
-                    App_Id__c = 'TestApp',
-                    Exclude_Files__c = 'none',
-                    Exclude_Folders__c = 'none'
+                    Snow_AppsSvcID__c = 'TestProject' + i,
+                    App_Id__c = 'AppId' + i
                 )
-            );
-            insert userStoryTrue;
-
-            // Test data for multiapp == 'FALSE'
-            copado__Release__c releaseMultiAppFalse = new copado__Release__c(
-                Name = 'Test Release MultiApp False',
-                SecApiScanProjectCounter__c = 1,
-                CurrentScanCount__c = 1,
-                Current_SAST_Run_Status__c = 'FINISHED',
-                Current_SCA_Run_Status__c = 'PENDING'
-            );
-            insert releaseMultiAppFalse;
-
-            Copado__User_Story__c userStoryFalse = new Copado__User_Story__c(
-                Name = 'Test User Story False',
-                copado__Release__c = releaseMultiAppFalse.Id,
-                Copado__Project__c = 'Test Project',
-                Copado__Project__r = new Copado__Project__c(
-                    SNOW_APPSVCID__c = '67890',
-                    App_Id__c = 'TestApp2',
-                    Exclude_Files__c = 'none',
-                    Exclude_Folders__c = 'none'
-                )
-            );
-            insert userStoryFalse;
-
-            SEC_API_Scan_Result__c scanResult = new SEC_API_Scan_Result__c(
-                Name = 'Test Scan Result',
-                SCA_scan_Status__c = 'PENDING',
-                SCA_Pdf_Report__c = null,
-                Xml_Report__c = null,
-                Json_Report__c = null,
-                Score_Card__c = null
-            );
-            insert scanResult;
-
-            // Set up mock HTTP callout response
-            Test.setMock(HttpCalloutMock.class, new RunSCAStatusCheckMock());
-
-            // Call method for multiapp == 'TRUE'
-            String statusURLSCA = '12345';
-            scanStatusWrapper resultTrue = SecApiHandler.runSCAStatusCheck(statusURLSCA, releaseMultiAppTrue.Id);
-
-            // Assert the results for multiapp == 'TRUE'
-            System.assertNotEquals(null, resultTrue);
-            System.assertEquals('PARTIAL FINISHED', resultTrue.currentStatus);
-
-            // Call method for multiapp == 'FALSE'
-            scanStatusWrapper resultFalse = SecApiHandler.runSCAStatusCheck(statusURLSCA, releaseMultiAppFalse.Id);
-
-            // Assert the results for multiapp == 'FALSE'
-            System.assertNotEquals(null, resultFalse);
-            System.assertNotEquals('PARTIAL FINISHED', resultFalse.currentStatus); // Assuming the status won't be 'PARTIAL FINISHED'
-
-        } catch (Exception e) {
-            System.assert(false, 'Test failed due to exception: ' + e.getMessage());
+            ));
         }
+        insert userStories;
+
+        // Mock HTTP Callout
+        HttpResponse mockResponse = new HttpResponse();
+        mockResponse.setStatusCode(200);
+        mockResponse.setBody('{"status":"FINISHED","jsonReport":"report","pdfReport":"report.pdf","xmlReport":"report.xml","scoreCard":"A","submitedDateTime":"2025-01-01T12:00:00","message":"Scan completed successfully"}');
+
+        Test.setMock(HttpCalloutMock.class, new MockHttpResponseGenerator(mockResponse));
+
+        // Test Execution
+        Test.startTest();
+        RunSecAPIStatusCheck.scanStatusWrapper result = RunSecAPIStatusCheck.runSecAPIStatusCheck('testStatusURL', release.Id);
         Test.stopTest();
+
+        // Assertions
+        System.assertEquals('FINISHED', result.currentStatus);
+        System.assertNotEquals(null, result.statusURL);
+    }
+
+    private class MockHttpResponseGenerator implements HttpCalloutMock {
+        private HttpResponse response;
+
+        public MockHttpResponseGenerator(HttpResponse response) {
+            this.response = response;
+        }
+
+        public HttpResponse respond(HttpRequest req) {
+            return response;
+        }
     }
 }
-
-// Mock class for HTTP callout
-@isTest
-private class RunSCAStatusCheckMock implements HttpCalloutMock {
-    public HTTPResponse respond(HTTPRequest req) {
-        HttpResponse res = new HttpResponse();
-        if (req.getEndpoint().contains('/status/12345')) {
-            res.setBody('{"status":"FINISHED","jsonReport":"{...}","pdfReport":"pdfURL","xmlReport":"xmlURL","scoreCard":"A","message":"Success"}');
-            res.setStatusCode(200);
-        } else {
-            res.setStatusCode(500);
-            res.setBody('{"message":"Internal Server Error"}');
-        }
-        return res;
-    }
-}
-
-@IsTest
-    public static void testRunSecAPIStatusCheck_HttpStatusError() {
-        // Mock HTTP response with non-200 status code (e.g., 404)
-        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
-                404,
-                "Not Found",
-                "{}",
-                null);
-        Test.setMock(HttpCalloutMock.class, fakeResponse);
-
-        // Call the method and assert the error message
-        try {
-            SecAPIReleaseScanController.runSecAPIStatusCheck('valid_status_url', 'valid_release_id');
-            System.assert(false, 'Expected AuraHandledException');
-        } catch (AuraHandledException e) {
-            System.assert(e.getMessage().contains('Error occured during 2nd Callout. Response Status Code : 404'), 'Incorrect error message');
-        }
-    }
-
-    @IsTest
-    public static void testRunSecAPIStatusCheck_Exception() {
-        // Simulate an exception in a helper method (e.g., getCalloutResponse)
-        Test.setMock(HttpCalloutMock.class, new MockHttpCallout() {
-            public HTTPResponse invoke(HttpRequest req) {
-                throw new CalloutException('Simulated Callout Exception');
-            }
-        });
-
-        // Call the method and assert the exception
-        try {
-            SecAPIReleaseScanController.runSecAPIStatusCheck('valid_status_url', 'valid_release_id');
-            System.assert(false, 'Expected AuraHandledException');
-        } catch (AuraHandledException e) {
-            System.assert(e.getMessage().contains('Error occured during 2nd Callout. Exception Cause : Simulated Callout Exception'), 'Incorrect error message');
-        }
-    }
-
