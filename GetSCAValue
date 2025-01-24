@@ -1,0 +1,69 @@
+@isTest
+public class Test_SecAPI {
+    @isTest
+    static void testGetSCAvalue() {
+        // Step 1: Setup test data
+        // Create a copado__Release__c record
+        copado__Release__c releaseRecord = new copado__Release__c(
+            Name = 'Test Release',
+            Humana_Org__c = 'TestOrg'
+        );
+        insert releaseRecord;
+
+        // Create a mock SCA Identifier record
+        SCA_Identifier_for_Org__mdt scaIdentifier = new SCA_Identifier_for_Org__mdt(
+            OrgName__c = 'TestOrg',
+            SCA_required__c = 'true'
+        );
+        insert scaIdentifier;
+
+        // Step 2: Execute the method
+        Test.startTest();
+        Boolean result = SecAPI.getSCAvalue(releaseRecord.Id, 0);
+        Test.stopTest();
+
+        // Step 3: Validate the results
+        // Assert that the SCA required flag is returned as true
+        System.assertEquals(true, result, 'SCA required value should be true.');
+    }
+
+    @isTest
+    static void testGetSCAvalueWithoutHumanaOrg() {
+        // Step 1: Setup test data
+        // Create a copado__Release__c record without Humana_Org__c
+        copado__Release__c releaseRecord = new copado__Release__c(
+            Name = 'Test Release'
+        );
+        insert releaseRecord;
+
+        // Step 2: Execute the method
+        Test.startTest();
+        try {
+            SecAPI.getSCAvalue(releaseRecord.Id, 0);
+            System.assert(false, 'Expected an exception for missing Humana_Org__c.');
+        } catch (AuraHandledException e) {
+            System.assertEquals('Humana Org__c is blank for the given release.', e.getMessage());
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testGetSCAvalueNoUpdateAccess() {
+        // Step 1: Setup test data
+        // Create a copado__Release__c record
+        copado__Release__c releaseRecord = new copado__Release__c(
+            Name = 'Test Release',
+            Humana_Org__c = 'TestOrg'
+        );
+        insert releaseRecord;
+
+        // Mock Schema access for copado__Release__c to simulate no update access
+        Test.startTest();
+        Test.setMock(Schema.DescribeFieldResult.class, new MockDescribeFieldResult(false));
+        Boolean result = SecAPI.getSCAvalue(releaseRecord.Id, 0);
+        Test.stopTest();
+
+        // Assert no updates were made and SCA required is false
+        System.assertEquals(false, result, 'SCA required should be false.');
+    }
+}
