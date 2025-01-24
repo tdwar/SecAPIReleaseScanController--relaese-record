@@ -67,3 +67,71 @@ public class Test_SecAPI {
         System.assertEquals(false, result, 'SCA required should be false.');
     }
 }
+
+@isTest
+static void testRunSecAPIStatusCheck() {
+    // Fetch required test records
+    copado__Project__c pro = [SELECT Id, App_Id__c FROM copado__Project__c WHERE Name = 'MY JIRA Project' LIMIT 1];
+    Sec_Api_Scan_Result__c srItem = [SELECT Id, Copado_User_Story__c FROM Sec_Api_Scan_Result__c LIMIT 1];
+    copado__Release__c releaseRec = [SELECT Id, SecApiScanProjectCounter__c, CurrentScanCount__c, 
+                                      Current_SAST_Run_Status__c, Current_SCA_Run_Status__c 
+                                      FROM copado__Release__c LIMIT 1];
+
+    // Test scenario 1: multiapp = 'TRUE', scaRequired = true
+    releaseRec.SecApiScanProjectCounter__c = 2; // multiapp = 'TRUE'
+    releaseRec.Current_SAST_Run_Status__c = 'IN_PROGRESS';
+    update releaseRec;
+
+    Test.startTest();
+    try {
+        // Mock HTTP Callout Response
+        SecApiMockHttpResponseGenerator fakeResponse = new SecApiMockHttpResponseGenerator(
+            200,
+            'Complete',
+            '{"jsonReport": "https://test.com", "pdfReport": "https://test.com", "xmlReport": "https://test.com", ' +
+            '"scoreCard": "https://test.com", "status": "FINISHED", "submitedDateTime": "Monday, 01 January 2020 01:01:01", "message": "test"}',
+            null
+        );
+        Test.setMock(HttpCalloutMock.class, fakeResponse);
+
+        // Execute the method
+        SecAPIReleaseScanController.runSecAPIStatusCheck('abc', releaseRec.Id);
+
+        // Assert expected values
+        copado__Release__c updatedRelease = [SELECT Id, SEC_API_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals('FINISHED', updatedRelease.SEC_API_Scan_Status__c, 'The SEC_API_Scan_Status__c should be FINISHED.');
+
+        // Test scenario 2: multiapp = 'TRUE', scaRequired = false
+        releaseRec.SecApiScanProjectCounter__c = 2; // multiapp = 'TRUE'
+        releaseRec.Current_SAST_Run_Status__c = 'COMPLETED';
+        releaseRec.Current_SCA_Run_Status__c = 'NOT_REQUIRED';
+        update releaseRec;
+
+        SecAPIReleaseScanController.runSecAPIStatusCheck('abc', releaseRec.Id);
+        updatedRelease = [SELECT Id, SEC_API_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals('Callout 2 Completed', updatedRelease.SEC_API_Scan_Status__c, 'The SEC_API_Scan_Status__c should reflect completion.');
+
+        // Test scenario 3: multiapp = 'FALSE', scaRequired = false
+        releaseRec.SecApiScanProjectCounter__c = 1; // multiapp = 'FALSE'
+        update releaseRec;
+
+        SecAPIReleaseScanController.runSecAPIStatusCheck('abc', releaseRec.Id);
+        updatedRelease = [SELECT Id, SEC_API_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals('Callout 2 Completed', updatedRelease.SEC_API_Scan_Status__c, 'The SEC_API_Scan_Status__c should reflect completion.');
+
+        // Test scenario 4: multiapp = 'FALSE', scaRequired = true
+        releaseRec.SecApiScanProjectCounter__c = 1; // multiapp = 'FALSE'
+        releaseRec.Current_SCA_Run_Status__c = 'IN_PROGRESS';
+        update releaseRec;
+
+        SecAPIReleaseScanController.runSecAPIStatusCheck('abc', releaseRec.Id);
+        updatedRelease = [SELECT Id, SEC_API_Scan_Status__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertNotEquals('Callout 2.5 Failed', updatedRelease.SEC_API_Scan_Status__c, 'The status should not indicate failure.');
+    } catch (Exception e) {
+        System.debug('Exception occurred: ' + e.getMessage());
+        System.assert(false, 'Unexpected exception: ' + e.getMessage());
+    }
+    Test.stopTest();
+}
+
+
