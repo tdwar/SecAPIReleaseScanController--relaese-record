@@ -1,0 +1,19 @@
+@isTest
+    static void testErrorHandling() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock HTTP Callout with Error
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            500, 'Internal Server Error', '', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        try {
+            SecAPIReleaseScanController.secAPIScan(release.Id);
+            System.assert(false, 'Exception should have been thrown.');
+        } catch (Exception e) {
+            System.assert(e.getMessage().contains('Error'), 'Exception message should indicate an error.');
+        }
+        Test.stopTest();
+    }
