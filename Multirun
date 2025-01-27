@@ -1,0 +1,49 @@
+@isTest
+public class SecAPIReleaseScanControllerTest {
+    @isTest
+    static void testMultiRunScancheck() {
+        // Create a test release record
+        copado__Release__c releaseRec = new copado__Release__c(
+            Name = 'Test Release',
+            SecApiScanProjectCounter__c = 3, // Total scans expected
+            CurrentScanCount__c = 1, // Current scan count
+            Unique_Appservice_Id__c = '1001,1002,1003', // Unique IDs
+            Current_SAST_Run_Status__c = '1001-completed', // Current SAST status
+            Current_SCA_Run_Status__c = '1001-completed'  // Current SCA status
+        );
+        insert releaseRec;
+
+        System.assertNotEquals(null, releaseRec.Id, 'Release record was not inserted successfully.');
+
+        // Test Case 1: RunType = 'SAS' where current scan status matches Current_SCA_Run_Status__c
+        Test.startTest();
+        String resultSAS = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SAS');
+        Test.stopTest();
+        System.assertEquals('True', resultSAS, 'multiRunScancheck should return True when RunType is SAS and conditions are met.');
+
+        // Test Case 2: RunType = 'SCA' where current scan status matches Current_SAST_Run_Status__c
+        releaseRec.CurrentScanCount__c = 2; // Update the current scan count
+        update releaseRec;
+        Test.startTest();
+        String resultSCA = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+        System.assertEquals('True', resultSCA, 'multiRunScancheck should return True when RunType is SCA and conditions are met.');
+
+        // Test Case 3: Edge case where all scans are completed
+        releaseRec.CurrentScanCount__c = 3; // Set the scan count to the max
+        update releaseRec;
+        Test.startTest();
+        String resultMaxScan = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+        System.assertEquals('False', resultMaxScan, 'multiRunScancheck should return False when all scans are completed.');
+
+        // Test Case 4: Verify `runcount` behavior
+        releaseRec.CurrentScanCount__c = 1;
+        update releaseRec;
+        Test.startTest();
+        SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SAS');
+        Test.stopTest();
+        releaseRec = [SELECT CurrentScanCount__c FROM copado__Release__c WHERE Id = :releaseRec.Id];
+        System.assertEquals(2, releaseRec.CurrentScanCount__c, 'runcount should increment correctly when conditions are met.');
+    }
+}
