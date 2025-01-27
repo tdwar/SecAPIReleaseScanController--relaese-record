@@ -108,3 +108,5 @@ public class SecAPIReleaseScanControllerTest {
     }
 }
 
+System.AssertException: Assertion Failed: multiRunScancheck should return True for SAS when runcount < SecApiScanProjectCounter__c.: Expected: True, Actual: False
+
