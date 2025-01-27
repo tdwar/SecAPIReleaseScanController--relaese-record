@@ -1,0 +1,141 @@
+@isTest
+public class RunSecAPIStatusCheck_Test {
+
+    @testSetup
+    static void setupTestData() {
+        // Setting up Integration Setting
+        Copado_Integration_Setting__c integrationSetting = new Copado_Integration_Setting__c(
+            Name = 'JIRA',
+            External_System__c = 'JIRA',
+            Named_Credential__c = 'Test_JIRA'
+        );
+        insert integrationSetting;
+
+        // Setting up Project
+        copado__Project__c project = new copado__Project__c(
+            Name = 'Test Project',
+            Project_External_Id__c = 'TP',
+            Copado_Integration_Setting__c = integrationSetting.Id,
+            Enable_Logs__c = true,
+            Workspace_Id__c = 'workspace-12345',
+            App_Id__c = 'App-12345',
+            SNOW_APPSVCID__c = 'APPSVC12345'
+        );
+        insert project;
+
+        // Setting up Release
+        copado__Release__c release = new copado__Release__c(
+            Name = 'Test Release',
+            copado__Version__c = '1.0',
+            SecApiScanProjectCounter__c = 2,
+            CurrentScanCount__c = 1,
+            Current_SAST_Run_Status__c = 'Pending',
+            Current_SCA_Run_Status__c = 'Pending'
+        );
+        insert release;
+
+        // Setting up User Story
+        copado__User_Story__c userStory = new copado__User_Story__c(
+            copado__Project__c = project.Id,
+            copado__Release__c = release.Id,
+            copado__Pull_Requests_Approved__c = true
+        );
+        insert userStory;
+
+        // Setting up Scan Result
+        Sec_Api_Scan_Result__c scanResult = new Sec_Api_Scan_Result__c(
+            Release_Copado__c = release.Id,
+            RecordTypeId = Schema.SObjectType.SEC_API_Scan_Result__c.getRecordTypeInfosByName().get('Release').getRecordTypeId()
+        );
+        insert scanResult;
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckSuccess() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock successful response
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"status": "FINISHED", "jsonReport": "testJson", "pdfReport": "testPdf", "xmlReport": "testXml", "scoreCard": "A+", "message": "Success"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals('FINISHED', result.currentStatus, 'The status should be FINISHED.');
+        System.assert(result.statusURL != null, 'The status URL should be returned.');
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckIncomplete() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock response with IN_PROGRESS status
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"status": "IN_PROGRESS", "message": "Still processing"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals('IN_PROGRESS', result.currentStatus, 'The status should be IN_PROGRESS.');
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckError() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock error response
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            500, 'Internal Server Error', '', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        try {
+            SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+            System.assert(false, 'Exception should have been thrown.');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Error occured during 2nd Callout'), 'Error message should match expected output.');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckNoStatusField() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock response without status field
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"message": "No status available"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assert(result.currentStatus == null, 'The status should be null if not provided in the response.');
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckMultiAppSCA() {
+        copado__Release__c release = [SELECT Id, SecApiScanProjectCounter__c FROM copado__Release__c LIMIT 1];
+
+        // Mock multi-app response
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"status": "FINISHED", "message": "Multi-app scan completed", "scoreCard": "A"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals('FINISHED', result.currentStatus, 'Multi-app scans should return FINISHED when complete.');
+    }
+}
