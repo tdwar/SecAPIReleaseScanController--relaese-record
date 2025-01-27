@@ -47,3 +47,64 @@ public class SecAPIReleaseScanControllerTest {
         System.assertEquals(2, releaseRec.CurrentScanCount__c, 'runcount should increment correctly when conditions are met.');
     }
 }
+
+
+@isTest
+public class SecAPIReleaseScanControllerTest {
+    @isTest
+    static void testMultiRunScancheck() {
+        // Create a test release record
+        copado__Release__c releaseRec = new copado__Release__c(
+            Name = 'Test Release',
+            SecApiScanProjectCounter__c = 3, // Total scans expected
+            CurrentScanCount__c = 1, // Current scan count
+            Unique_Appservice_Id__c = '1001,1002,1003', // Unique IDs
+            Current_SAST_Run_Status__c = '1001-completed', // Current SAST status
+            Current_SCA_Run_Status__c = '1001-completed'  // Current SCA status
+        );
+        insert releaseRec;
+
+        System.assertNotEquals(null, releaseRec.Id, 'Release record was not inserted successfully.');
+
+        // Test Case 1: runcount logic with RunType = 'SAS' and runcount < SecApiScanProjectCounter__c
+        releaseRec.CurrentScanCount__c = 1;
+        update releaseRec;
+
+        Test.startTest();
+        String resultSAS = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SAS');
+        Test.stopTest();
+
+        System.assertEquals('True', resultSAS, 'multiRunScancheck should return True for SAS when runcount < SecApiScanProjectCounter__c.');
+
+        // Test Case 2: runcount logic with RunType = 'SAS' and runcount >= SecApiScanProjectCounter__c
+        releaseRec.CurrentScanCount__c = 2; // Update to max value for this scenario
+        update releaseRec;
+
+        Test.startTest();
+        String resultSASMax = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SAS');
+        Test.stopTest();
+
+        System.assertEquals('False', resultSASMax, 'multiRunScancheck should return False for SAS when runcount >= SecApiScanProjectCounter__c.');
+
+        // Test Case 3: runcount logic with RunType = 'SCA' and runcount < SecApiScanProjectCounter__c
+        releaseRec.CurrentScanCount__c = 1;
+        update releaseRec;
+
+        Test.startTest();
+        String resultSCA = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+
+        System.assertEquals('True', resultSCA, 'multiRunScancheck should return True for SCA when runcount < SecApiScanProjectCounter__c.');
+
+        // Test Case 4: runcount logic with RunType = 'SCA' and runcount >= SecApiScanProjectCounter__c
+        releaseRec.CurrentScanCount__c = 3; // Update to max value for this scenario
+        update releaseRec;
+
+        Test.startTest();
+        String resultSCAMax = SecAPIReleaseScanController.multiRunScancheck(releaseRec.Id, 'SCA');
+        Test.stopTest();
+
+        System.assertEquals('False', resultSCAMax, 'multiRunScancheck should return False for SCA when runcount >= SecApiScanProjectCounter__c.');
+    }
+}
+
