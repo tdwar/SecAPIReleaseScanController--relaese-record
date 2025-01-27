@@ -17,3 +17,77 @@
         }
         Test.stopTest();
     }
+
+
+@isTest
+    static void testRunSecAPIStatusCheckSuccess() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock HTTP Response for Success
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"status": "FINISHED", "jsonReport": "testJson", "pdfReport": "testPdf", "xmlReport": "testXml", "scoreCard": "A+", "message": "Success"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals('FINISHED', result.currentStatus, 'Status should be FINISHED.');
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckError() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock HTTP Response for Error
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            500, 'Internal Server Error', '', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        try {
+            SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+            System.assert(false, 'Exception should have been thrown.');
+        } catch (AuraHandledException e) {
+            System.assert(e.getMessage().contains('Error occured during 2nd Callout'), 'Exception message should indicate callout error.');
+        }
+        Test.stopTest();
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckIncomplete() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock HTTP Response for Incomplete Status
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"status": "IN_PROGRESS", "message": "Still processing"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals('IN_PROGRESS', result.currentStatus, 'Status should be IN_PROGRESS.');
+    }
+
+    @isTest
+    static void testRunSecAPIStatusCheckNoStatus() {
+        copado__Release__c release = [SELECT Id FROM copado__Release__c LIMIT 1];
+
+        // Mock HTTP Response with No Status
+        SecApiMockHttpResponseGenerator mockResponse = new SecApiMockHttpResponseGenerator(
+            200, 'OK', '{"message": "No status available"}', null
+        );
+        Test.setMock(HttpCalloutMock.class, mockResponse);
+
+        Test.startTest();
+        scanStatusWrapper result = SecAPIReleaseScanController.runSecAPIStatusCheck('statusUrl', release.Id);
+        Test.stopTest();
+
+        System.assertEquals(null, result.currentStatus, 'Status should be null if not provided in response.');
+    }
+}
+
